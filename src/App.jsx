@@ -469,70 +469,48 @@ function Schedule() {
 
 function Register() {
   const [status, setStatus] = useState("idle");
-  const [pic, setPic] = useState("");
-  const [teamName, setTeamName] = useState("");
-  const [members, setMembers] = useState([
-    { id: 1, nickname: "", gameId: "", server: "" },
-    { id: 2, nickname: "", gameId: "", server: "" },
-    { id: 3, nickname: "", gameId: "", server: "" },
-    { id: 4, nickname: "", gameId: "", server: "" },
-    { id: 5, nickname: "", gameId: "", server: "" },
-  ]);
+  const [nama, setNama] = useState("");
+  const [noHp, setNoHp] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [gameId, setGameId] = useState("");
+  const [server, setServer] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
-
-  const handleMemberChange = (index, field, value) => {
-    const newMembers = [...members];
-    newMembers[index][field] = value;
-    setMembers(newMembers);
-  };
-
-  const addMember = () => {
-    const newId = Math.max(...members.map(m => m.id), 0) + 1;
-    setMembers([...members, { id: newId, nickname: "", gameId: "", server: "" }]);
-  };
-
-  const removeMember = (index) => {
-    if (members.length > 5) {
-      setMembers(members.filter((_, i) => i !== index));
-    }
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validasi Nama PIC
-    if (!pic.trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nama PIC (Penanggung Jawab) wajib diisi");
-      document.getElementById("picInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Validasi Nama
+    if (!nama.trim()) {
+      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nama wajib diisi");
+      document.getElementById("namaInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
-    // Validasi Nama Tim
-    if (!teamName.trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nama Tim wajib diisi");
-      document.getElementById("teamInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Validasi Nomor HP
+    if (!noHp.trim()) {
+      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nomor HP wajib diisi");
+      document.getElementById("hpInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
-    // Validasi Anggota Tim
-    let emptyMemberFields = [];
-    members.forEach((member, index) => {
-      if (!member.nickname.trim()) {
-        emptyMemberFields.push(`Anggota ${index + 1}: Nickname Game`);
-      }
-      if (!member.gameId.toString().trim()) {
-        emptyMemberFields.push(`Anggota ${index + 1}: ID Game`);
-      }
-      if (!member.server.toString().trim()) {
-        emptyMemberFields.push(`Anggota ${index + 1}: Server Game`);
-      }
-    });
+    // Validasi Nickname Akun
+    if (!nickname.trim()) {
+      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nickname Akun wajib diisi");
+      document.getElementById("nicknameInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
 
-    if (emptyMemberFields.length > 0) {
-      const fieldList = emptyMemberFields.slice(0, 5).join("\n");
-      const moreText = emptyMemberFields.length > 5 ? `\n... dan ${emptyMemberFields.length - 5} field lainnya` : "";
-      alert(`❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n${fieldList}${moreText}`);
-      document.getElementById("membersSection")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Validasi ID Game
+    if (!gameId.toString().trim()) {
+      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- ID Game wajib diisi (hanya angka)");
+      document.getElementById("gameIdInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // Validasi Server Game
+    if (!server.toString().trim()) {
+      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Server Game wajib diisi (hanya angka)");
+      document.getElementById("serverInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -547,7 +525,7 @@ function Register() {
     setTimeout(() => {
       setStatus("success");
       setTimeout(() => {
-        alert(`✅ PENDAFTARAN BERHASIL!\n\nTim: ${teamName}\nPIC: ${pic}\n\nTerima kasih telah mendaftar di Turnamen E-Sports Cluster Golden Flower. Kami akan menghubungi Anda segera dengan detail lebih lanjut.`);
+        alert(`✅ PENDAFTARAN BERHASIL!\n\nNama: ${nama}\nNomor HP: ${noHp}\nNickname: ${nickname}\n\nTerima kasih telah mendaftar di Turnamen E-Sports Cluster Golden Flower. Kami akan menghubungi Anda segera dengan detail lebih lanjut.`);
       }, 500);
     }, 1500);
   };
@@ -559,21 +537,17 @@ function Register() {
         <div className="nx-page-inner" style={{ textAlign: "center", paddingTop: "80px" }}>
           <Trophy size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px" }} />
           <h2>Pendaftaran Berhasil!</h2>
-          <p className="nx-section-desc">Tim <strong>{teamName}</strong> telah terdaftar dalam Turnamen E-Sports Cluster Golden Flower.</p>
+          <p className="nx-section-desc"><strong>{nama}</strong> telah berhasil terdaftar dalam Turnamen E-Sports Cluster Golden Flower.</p>
           <button className="nx-btn nx-btn-primary" style={{ marginTop: "30px" }} onClick={() => {
             setStatus("idle");
-            setPic("");
-            setTeamName("");
-            setMembers([
-              { id: 1, nickname: "", gameId: "", server: "" },
-              { id: 2, nickname: "", gameId: "", server: "" },
-              { id: 3, nickname: "", gameId: "", server: "" },
-              { id: 4, nickname: "", gameId: "", server: "" },
-              { id: 5, nickname: "", gameId: "", server: "" },
-            ]);
+            setNama("");
+            setNoHp("");
+            setNickname("");
+            setGameId("");
+            setServer("");
             setAgreeTerms(false);
           }}>
-            Daftar Tim Lain
+            Daftar Peserta Lain
           </button>
         </div>
       </section>
@@ -585,128 +559,79 @@ function Register() {
       <HexField dense />
       <div className="nx-page-inner">
         <div className="nx-section-head">
-          <span className="nx-section-eyebrow">Pendaftaran Tim</span>
-          <h1>Daftarkan Tim Anda</h1>
-          <p className="nx-section-desc">Isi formulir di bawah ini untuk berpartisipasi dalam perebutan takhta juara.</p>
+          <span className="nx-section-eyebrow">Pendaftaran Peserta</span>
+          <h1>Daftarkan Diri Anda</h1>
+          <p className="nx-section-desc">Isi formulir di bawah ini untuk berpartisipasi dalam Turnamen E-Sports Cluster Golden Flower.</p>
         </div>
 
         <form className="nx-form" onSubmit={handleSubmit}>
-          <div className="nx-form-divider">Data Penanggung Jawab</div>
+          <div className="nx-form-divider">Data Peserta</div>
           
           <div className="nx-form-group">
-            <label>Nama PIC (Penanggung Jawab)</label>
+            <label>Nama</label>
             <input 
-              id="picInput"
+              id="namaInput"
               required 
               type="text" 
               className="nx-input" 
-              placeholder="Masukkan nama lengkap PIC"
-              value={pic}
-              onChange={(e) => setPic(e.target.value)}
+              placeholder="Masukkan nama lengkap Anda"
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
             />
           </div>
 
-          <div className="nx-form-divider">Data Tim</div>
-
           <div className="nx-form-group">
-            <label>Nama Tim</label>
+            <label>Nomor HP</label>
             <input 
-              id="teamInput"
+              id="hpInput"
               required 
               type="text" 
               className="nx-input" 
-              placeholder="Misal: Crimson Wolves"
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
+              placeholder="Contoh: 081234567890"
+              value={noHp}
+              onChange={(e) => setNoHp(e.target.value)}
             />
           </div>
 
-          <div className="nx-form-divider">Data Anggota Tim</div>
-          
-          <div id="membersSection" style={{ marginBottom: "20px" }}>
-            {members.map((member, index) => (
-              <div key={member.id} style={{ marginBottom: "16px", padding: "16px", background: "var(--bg-panel)", borderRadius: "8px", border: "1px solid var(--line)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <span style={{ fontSize: "13px", fontWeight: "700", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Anggota {index + 1}</span>
-                  {members.length > 5 && (
-                    <button
-                      type="button"
-                      onClick={() => removeMember(index)}
-                      style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: "0" }}
-                      title="Hapus anggota"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-                <div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-                  <div className="nx-form-group">
-                    <label>Nickname Game</label>
-                    <input 
-                      required 
-                      type="text" 
-                      className="nx-input" 
-                      placeholder="Masukkan nickname game"
-                      value={member.nickname}
-                      onChange={(e) => handleMemberChange(index, "nickname", e.target.value)}
-                    />
-                  </div>
-                  <div className="nx-form-group">
-                    <label>ID Game</label>
-                    <input 
-                      required 
-                      type="number" 
-                      className="nx-input" 
-                      placeholder="Masukkan ID game"
-                      value={member.gameId}
-                      onChange={(e) => handleMemberChange(index, "gameId", e.target.value)}
-                    />
-                  </div>
-                  <div className="nx-form-group">
-                    <label>Server Game</label>
-                    <input 
-                      required 
-                      type="number" 
-                      className="nx-input" 
-                      placeholder="Masukkan nomor server"
-                      value={member.server}
-                      onChange={(e) => handleMemberChange(index, "server", e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="nx-form-group">
+            <label>Nickname Akun Game</label>
+            <input 
+              id="nicknameInput"
+              required 
+              type="text" 
+              className="nx-input" 
+              placeholder="Masukkan nickname akun game Anda"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+            />
           </div>
 
-          <button
-            type="button"
-            onClick={addMember}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              width: "100%",
-              padding: "12px 16px",
-              background: "rgba(11,128,244,0.08)",
-              border: "1px dashed rgba(11,128,244,0.35)",
-              borderRadius: "8px",
-              color: "var(--primary)",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-              marginBottom: "24px",
-              transition: "all 0.2s"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(11,128,244,0.12)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(11,128,244,0.08)";
-            }}
-          >
-            <Plus size={16} />
-            Tambah Anggota
-          </button>
+          <div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+            <div className="nx-form-group">
+              <label>ID Game</label>
+              <input 
+                id="gameIdInput"
+                required 
+                type="number" 
+                className="nx-input" 
+                placeholder="Masukkan ID game (hanya angka)"
+                value={gameId}
+                onChange={(e) => setGameId(e.target.value)}
+              />
+            </div>
+            <div className="nx-form-group">
+              <label>Server Game</label>
+              <input 
+                id="serverInput"
+                required 
+                type="number" 
+                className="nx-input" 
+                placeholder="Masukkan nomor server (hanya angka)"
+                value={server}
+                onChange={(e) => setServer(e.target.value)}
+              />
+            </div>
+          </div>
 
           <div className="nx-form-divider">Syarat &amp; Ketentuan</div>
 
@@ -725,14 +650,14 @@ function Register() {
             <h4 style={{ marginTop: "0", marginBottom: "10px", color: "var(--text)", fontSize: "14px", fontWeight: "700" }}>Syarat dan Ketentuan Mengikuti Turnamen</h4>
             <ul style={{ marginLeft: "20px", marginBottom: "10px" }}>
               <li style={{ marginBottom: "8px" }}>Peserta harus berusia minimal 18 tahun atau mendapat izin dari orang tua/wali.</li>
-              <li style={{ marginBottom: "8px" }}>Setiap tim terdiri dari minimum 5 (lima) anggota yang telah terdaftar.</li>
-              <li style={{ marginBottom: "8px" }}>Peserta harus memiliki akun game yang valid dan verifikasi dari panitia.</li>
+              <li style={{ marginBottom: "8px" }}>Setiap peserta harus memiliki akun game yang valid dan verifikasi dari panitia.</li>
               <li style={{ marginBottom: "8px" }}>Peserta wajib mematuhi peraturan turnamen yang telah ditentukan oleh panitia.</li>
               <li style={{ marginBottom: "8px" }}>Peserta tidak diperbolehkan menggunakan cheat, hack, atau modifikasi game ilegal.</li>
               <li style={{ marginBottom: "8px" }}>Pelanggaran akan mengakibatkan diskualifikasi tanpa pengembalian biaya pendaftaran.</li>
               <li style={{ marginBottom: "8px" }}>Panitia berhak mengubah jadwal, format, atau peraturan jika diperlukan dengan pemberitahuan sebelumnya.</li>
               <li style={{ marginBottom: "8px" }}>Dengan mendaftar, peserta setuju untuk mengizinkan penggunaan foto/video untuk keperluan dokumentasi turnamen.</li>
               <li style={{ marginBottom: "8px" }}>Keputusan panitia bersifat final dan tidak dapat digugat.</li>
+              <li style={{ marginBottom: "8px" }}>Peserta bertanggung jawab atas semua data yang dimasukkan dalam formulir pendaftaran.</li>
             </ul>
           </div>
 
