@@ -311,11 +311,6 @@ function Home({ go }) {
             <span className="nx-title-line nx-title-slam-right">CLUSTER MARIGOLD</span>
           </h1>
 
-          <p className="nx-hero-sub">
-            Delapan tim terbaik dari Blok {EVENT.blok}. Satu bagan eliminasi tunggal. Satu takhta juara,
-            digelar dalam semarak {EVENT.tema} menuju Grand Final 2026.
-          </p>
-
           <div className="nx-hero-cta">
             <button className="nx-btn nx-btn-primary" onClick={() => go("bracket")}>
               <Swords size={18} />
@@ -474,9 +469,12 @@ function Register() {
   const [nickname, setNickname] = useState("");
   const [gameId, setGameId] = useState("");
   const [server, setServer] = useState("");
+  const [clusterRumah, setClusterRumah] = useState("");
+  const [blokRumah, setBlokRumah] = useState("");
+  const [nomorRumah, setNomorRumah] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validasi Nama
@@ -514,20 +512,62 @@ function Register() {
       return;
     }
 
-    // Validasi Syarat & Ketentuan
-    if (!agreeTerms) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Checkbox \"Saya telah membaca dan menyetujui semua syarat dan ketentuan di atas\" wajib dicentang");
-      document.getElementById("termsSection")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Validasi Cluster Rumah
+    if (!clusterRumah.trim()) {
+      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Cluster Rumah wajib diisi");
+      document.getElementById("clusterInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // Validasi Blok Rumah
+    if (!blokRumah.trim()) {
+      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Blok Rumah wajib diisi");
+      document.getElementById("blokInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // Validasi Nomor Rumah
+    if (!nomorRumah.trim()) {
+      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nomor Rumah wajib diisi");
+      document.getElementById("nomorRumahInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     setStatus("submitting");
-    setTimeout(() => {
+
+    try {
+      const response = await fetch("https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          method: "INSERT",
+          nama: nama.trim(),
+          nomor_wa: noHp.trim(),
+          nickname: nickname.trim(),
+          game_id: gameId.trim(),
+          game_server: server.trim(),
+          cluster_rumah: clusterRumah.trim(),
+          blok_rumah: blokRumah.trim(),
+          nomor_rumah: nomorRumah.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.message || `Request gagal dengan status ${response.status}`);
+      }
+
+      const data = await response.json();
       setStatus("success");
       setTimeout(() => {
         alert(`✅ PENDAFTARAN BERHASIL!\n\nNama: ${nama}\nNomor HP: ${noHp}\nNickname: ${nickname}\n\nTerima kasih telah mendaftar di Turnamen E-Sports Cluster Golden Flower. Kami akan menghubungi Anda segera dengan detail lebih lanjut.`);
       }, 500);
-    }, 1500);
+    } catch (err) {
+      setStatus("idle");
+      alert(`❌ Gagal mengirim pendaftaran!\n\n${err.message}\n\nSilakan coba lagi.`);
+    }
   };
 
   if (status === "success") {
@@ -545,6 +585,9 @@ function Register() {
             setNickname("");
             setGameId("");
             setServer("");
+            setClusterRumah("");
+            setBlokRumah("");
+            setNomorRumah("");
             setAgreeTerms(false);
           }}>
             Daftar Peserta Lain
@@ -561,7 +604,6 @@ function Register() {
         <div className="nx-section-head">
           <span className="nx-section-eyebrow">Pendaftaran Peserta</span>
           <h1>Daftarkan Diri Anda</h1>
-          <p className="nx-section-desc">Isi formulir di bawah ini untuk berpartisipasi dalam Turnamen E-Sports Cluster Golden Flower.</p>
         </div>
 
         <form className="nx-form" onSubmit={handleSubmit}>
@@ -581,7 +623,7 @@ function Register() {
           </div>
 
           <div className="nx-form-group">
-            <label>Nomor HP</label>
+            <label>Nomor WA Aktif</label>
             <input 
               id="hpInput"
               required 
@@ -633,46 +675,46 @@ function Register() {
             </div>
           </div>
 
-          <div className="nx-form-divider">Syarat &amp; Ketentuan</div>
-
-          <div id="termsSection" style={{ 
-            padding: "16px", 
-            background: "var(--bg-panel)", 
-            borderRadius: "8px", 
-            border: "1px solid var(--line)",
-            marginBottom: "20px",
-            maxHeight: "250px",
-            overflowY: "auto",
-            fontSize: "13px",
-            lineHeight: "1.6",
-            color: "var(--muted)"
-          }}>
-            <h4 style={{ marginTop: "0", marginBottom: "10px", color: "var(--text)", fontSize: "14px", fontWeight: "700" }}>Syarat dan Ketentuan Mengikuti Turnamen</h4>
-            <ul style={{ marginLeft: "20px", marginBottom: "10px" }}>
-              <li style={{ marginBottom: "8px" }}>Peserta harus berusia minimal 18 tahun atau mendapat izin dari orang tua/wali.</li>
-              <li style={{ marginBottom: "8px" }}>Setiap peserta harus memiliki akun game yang valid dan verifikasi dari panitia.</li>
-              <li style={{ marginBottom: "8px" }}>Peserta wajib mematuhi peraturan turnamen yang telah ditentukan oleh panitia.</li>
-              <li style={{ marginBottom: "8px" }}>Peserta tidak diperbolehkan menggunakan cheat, hack, atau modifikasi game ilegal.</li>
-              <li style={{ marginBottom: "8px" }}>Pelanggaran akan mengakibatkan diskualifikasi tanpa pengembalian biaya pendaftaran.</li>
-              <li style={{ marginBottom: "8px" }}>Panitia berhak mengubah jadwal, format, atau peraturan jika diperlukan dengan pemberitahuan sebelumnya.</li>
-              <li style={{ marginBottom: "8px" }}>Dengan mendaftar, peserta setuju untuk mengizinkan penggunaan foto/video untuk keperluan dokumentasi turnamen.</li>
-              <li style={{ marginBottom: "8px" }}>Keputusan panitia bersifat final dan tidak dapat digugat.</li>
-              <li style={{ marginBottom: "8px" }}>Peserta bertanggung jawab atas semua data yang dimasukkan dalam formulir pendaftaran.</li>
-            </ul>
+          <div className="nx-form-group">
+            <label>Cluster Rumah</label>
+            <select 
+              id="clusterInput"
+              required 
+              className="nx-input" 
+              value={clusterRumah}
+              onChange={(e) => setClusterRumah(e.target.value)}
+            >
+              <option value="" disabled>Pilih cluster rumah Anda</option>
+              <option value="Cluster Marigold">Cluster Marigold</option>
+              <option value="Cluster Camelia">Cluster Camelia</option>
+            </select>
           </div>
 
-          <div className="nx-form-group" style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-            <input 
-              type="checkbox" 
-              id="agreeTerms"
-              required
-              checked={agreeTerms}
-              onChange={(e) => setAgreeTerms(e.target.checked)}
-              style={{ width: "20px", height: "20px", cursor: "pointer" }}
-            />
-            <label htmlFor="agreeTerms" style={{ margin: "0", fontSize: "13px", color: "var(--text)", cursor: "pointer", fontWeight: "500" }}>
-              Saya telah membaca dan menyetujui semua syarat dan ketentuan di atas
-            </label>
+          <div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+            <div className="nx-form-group">
+              <label>Blok Rumah</label>
+              <input 
+                id="blokInput"
+                required 
+                type="text" 
+                className="nx-input" 
+                placeholder="Contoh: A, B, C"
+                value={blokRumah}
+                onChange={(e) => setBlokRumah(e.target.value)}
+              />
+            </div>
+            <div className="nx-form-group">
+              <label>Nomor Rumah</label>
+              <input 
+                id="nomorRumahInput"
+                required 
+                type="text" 
+                className="nx-input" 
+                placeholder="Contoh: 10, 25"
+                value={nomorRumah}
+                onChange={(e) => setNomorRumah(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="nx-form-action">
@@ -868,7 +910,7 @@ html, body, #root {
 .is-revealed .nx-eyebrow { animation: nxFadeUp 0.6s 0.15s ease forwards; }
 
 .nx-hero-title {
-  font-size: clamp(26px, 7vw, 68px); font-weight: 900; line-height: 1.08; margin: 0 0 22px;
+  font-size: clamp(26px, 7vw, 68px); font-weight: 900; line-height: 1.08; margin: 0 0 60px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   letter-spacing: -0.01em;
 }
