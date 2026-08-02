@@ -474,8 +474,7 @@ function Register() {
   const [nomorRumah, setNomorRumah] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     
     // Validasi Nama
     if (!nama.trim()) {
@@ -582,7 +581,7 @@ function Register() {
         <div className="nx-page-inner" style={{ textAlign: "center", paddingTop: "80px" }}>
           <Trophy size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px" }} />
           <h2>Pendaftaran Berhasil!</h2>
-          <p className="nx-section-desc"><strong>{nama}</strong> telah berhasil terdaftar dalam Turnamen E-Sports Cluster Golden Flower.</p>
+          {/* <p className="nx-section-desc" style={{ textAlign: "center" }}><strong>{nama}</strong> telah berhasil terdaftar dalam Turnamen E-Sports Cluster Golden Flower.</p> */}
           <button className="nx-btn nx-btn-primary" style={{ marginTop: "30px" }} onClick={() => {
             setStatus("idle");
             setNama("");
@@ -611,14 +610,13 @@ function Register() {
           <h1>Daftarkan Diri Anda</h1>
         </div>
 
-        <form className="nx-form" onSubmit={handleSubmit}>
+        <div className="nx-form">
           <div className="nx-form-divider">Data Peserta</div>
           
           <div className="nx-form-group">
             <label>Nama</label>
             <input 
               id="namaInput"
-              required 
               type="text" 
               className="nx-input" 
               placeholder="Masukkan nama lengkap Anda"
@@ -631,7 +629,6 @@ function Register() {
             <label>Nomor WA Aktif</label>
             <input 
               id="hpInput"
-              required 
               type="text" 
               className="nx-input" 
               placeholder="Contoh: 081234567890"
@@ -644,7 +641,6 @@ function Register() {
             <label>Nickname Akun Game</label>
             <input 
               id="nicknameInput"
-              required 
               type="text" 
               className="nx-input" 
               placeholder="Masukkan nickname akun game Anda"
@@ -658,7 +654,6 @@ function Register() {
               <label>ID Game</label>
               <input 
                 id="gameIdInput"
-                required 
                 type="number" 
                 className="nx-input" 
                 placeholder="Masukkan ID game (hanya angka)"
@@ -670,7 +665,6 @@ function Register() {
               <label>Server Game</label>
               <input 
                 id="serverInput"
-                required 
                 type="number" 
                 className="nx-input" 
                 placeholder="Masukkan nomor server (hanya angka)"
@@ -684,7 +678,6 @@ function Register() {
             <label>Cluster Rumah</label>
             <select 
               id="clusterInput"
-              required 
               className="nx-input" 
               value={clusterRumah}
               onChange={(e) => setClusterRumah(e.target.value)}
@@ -700,7 +693,6 @@ function Register() {
               <label>Blok Rumah</label>
               <input 
                 id="blokInput"
-                required 
                 type="text" 
                 className="nx-input" 
                 placeholder="Contoh: A, B, C"
@@ -712,7 +704,6 @@ function Register() {
               <label>Nomor Rumah</label>
               <input 
                 id="nomorRumahInput"
-                required 
                 type="text" 
                 className="nx-input" 
                 placeholder="Contoh: 10, 25"
@@ -723,12 +714,12 @@ function Register() {
           </div>
 
           <div className="nx-form-action">
-            <button type="submit" className="nx-btn nx-btn-primary" disabled={status === "submitting" || !agreeTerms}>
+            <button type="button" className="nx-btn nx-btn-primary" onClick={handleSubmit}>
               {status === "submitting" ? "Mengirim..." : "Kirim Pendaftaran"}
               <ChevronRight size={16} />
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </section>
   );
