@@ -3,7 +3,6 @@ import {
   Trophy, Users, Calendar, Zap, Crown, ChevronRight, Menu, X,
   Clock, MapPin, Swords, ChevronDown, Radio, Flag, Lock, Plus, Trash2, Check
 } from "lucide-react";
-import Swal from "sweetalert2";
 
 /* ------------------------------------------------------------------ */
 /*  DATA                                                              */
@@ -480,56 +479,56 @@ function Register() {
     
     // Validasi Nama
     if (!nama.trim()) {
-      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Nama wajib diisi", confirmButtonColor: "#0B80F4" });
+      alert("❌ Form tidak lengkap!\n\nNama wajib diisi");
       document.getElementById("namaInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Nomor HP
     if (!noHp.trim()) {
-      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Nomor WA wajib diisi", confirmButtonColor: "#0B80F4" });
+      alert("❌ Form tidak lengkap!\n\nNomor WA wajib diisi");
       document.getElementById("hpInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Nickname Akun
     if (!nickname.trim()) {
-      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Nickname Akun wajib diisi", confirmButtonColor: "#0B80F4" });
+      alert("❌ Form tidak lengkap!\n\nNickname Akun wajib diisi");
       document.getElementById("nicknameInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi ID Game
     if (!gameId.toString().trim()) {
-      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "ID Game wajib diisi (hanya angka)", confirmButtonColor: "#0B80F4" });
+      alert("❌ Form tidak lengkap!\n\nID Game wajib diisi (hanya angka)");
       document.getElementById("gameIdInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Server Game
     if (!server.toString().trim()) {
-      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Server Game wajib diisi (hanya angka)", confirmButtonColor: "#0B80F4" });
+      alert("❌ Form tidak lengkap!\n\nServer Game wajib diisi (hanya angka)");
       document.getElementById("serverInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Cluster Rumah
     if (!clusterRumah.trim()) {
-      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Cluster Rumah wajib dipilih", confirmButtonColor: "#0B80F4" });
+      alert("❌ Form tidak lengkap!\n\nCluster Rumah wajib dipilih");
       document.getElementById("clusterInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Blok Rumah
     if (!blokRumah.trim()) {
-      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Blok Rumah wajib diisi", confirmButtonColor: "#0B80F4" });
+      alert("❌ Form tidak lengkap!\n\nBlok Rumah wajib diisi");
       document.getElementById("blokInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Nomor Rumah
     if (!nomorRumah.trim()) {
-      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Nomor Rumah wajib diisi", confirmButtonColor: "#0B80F4" });
+      alert("❌ Form tidak lengkap!\n\nNomor Rumah wajib diisi");
       document.getElementById("nomorRumahInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
@@ -562,22 +561,10 @@ function Register() {
 
       const data = await response.json();
       setStatus("success");
-      Swal.fire({
-        icon: "success",
-        title: "Pendaftaran Berhasil!",
-        html: `<b>${nama}</b> telah berhasil terdaftar dalam Turnamen E-Sports Cluster Golden Flower.<br><br>Kami akan menghubungi Anda melalui WhatsApp.`,
-        confirmButtonColor: "#0B80F4",
-        confirmButtonText: "OK",
-      });
+      alert(`✅ PENDAFTARAN BERHASIL!\n\nNama: ${nama}\nNomor WA: ${noHp}\nNickname: ${nickname}\n\nTerima kasih telah mendaftar di Turnamen E-Sports Cluster Golden Flower. Kami akan menghubungi Anda segera melalui WhatsApp.`);
     } catch (err) {
       setStatus("idle");
-      Swal.fire({
-        icon: "error",
-        title: "Pendaftaran Gagal!",
-        text: `${err.message}. Silakan coba lagi.`,
-        confirmButtonColor: "#0B80F4",
-        confirmButtonText: "Coba Lagi",
-      });
+      alert(`❌ Pendaftaran Gagal!\n\n${err.message}\n\nSilakan coba lagi.`);
     }
   };
 
