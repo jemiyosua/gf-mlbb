@@ -10,7 +10,7 @@ import {
 
 const EVENT = {
   cluster: "Golden Flower",
-  blok: "Marigold",
+  blok: "",
   tema: "HUT RI KE-81",
 };
 
@@ -273,7 +273,7 @@ function Nav({ page, go }) {
 /* ------------------------------------------------------------------ */
 
 function ClusterRibbon() {
-  const text = `MERDEKA! ${EVENT.tema} \u2014 TURNAMEN E-SPORTS CLUSTER ${EVENT.cluster.toUpperCase()}, BLOK ${EVENT.blok.toUpperCase()} \u2022 MERAH PUTIH BERKIBAR \u2022`;
+  const text = `MERDEKA! ${EVENT.tema} \u2014 TURNAMEN E-SPORTS CLUSTER ${EVENT.cluster.toUpperCase()} \u2022 MERAH PUTIH BERKIBAR \u2022`;
   return (
     <div className="nx-ribbon" role="note" aria-label="Informasi penyelenggara">
       <div className="nx-ribbon-track">
@@ -308,7 +308,6 @@ function Home({ go }) {
 
           <h1 className="nx-hero-title">
             <span className="nx-title-line nx-title-slam-left">GOLDEN FLOWER</span>
-            <span className="nx-title-line nx-title-slam-right">CLUSTER MARIGOLD</span>
           </h1>
 
           <div className="nx-hero-cta">
@@ -561,13 +560,21 @@ function Register() {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
-        throw new Error(errData?.message || `Request gagal dengan status ${response.status}`);
+        throw new Error(errData?.responsemessage || `Request gagal dengan status ${response.status}`);
       }
 
       const data = await response.json();
       console.log("Response data:", data);
-      setStatus("success");
-      alert(`✅ PENDAFTARAN BERHASIL!\n\nNama: ${nama}\nNomor WA: ${noHp}\nNickname: ${nickname}\n\nTerima kasih telah mendaftar di Turnamen E-Sports Cluster Golden Flower. Kami akan menghubungi Anda segera melalui WhatsApp.`);
+
+      if (data.error_code == 0) {
+        setStatus("success");
+      } else if (data.error_code == 1) {
+        setStatus("idle");
+        alert(`❌ ${data.error_message}`);
+      } else {
+        setStatus("idle");
+        alert(`❌ ${data.error_message}`);
+      }
     } catch (err) {
       setStatus("idle");
       alert(`❌ Pendaftaran Gagal!\n\n${err.message}\n\nSilakan coba lagi.`);
@@ -683,7 +690,7 @@ function Register() {
               onChange={(e) => setClusterRumah(e.target.value)}
             >
               <option value="" disabled>Pilih cluster rumah Anda</option>
-              <option value="Cluster Marigold">Cluster Marigold</option>
+              <option value="Cluster Golden Flower">Cluster Golden Flower</option>
               <option value="Cluster Camelia">Cluster Camelia</option>
             </select>
           </div>
@@ -757,8 +764,8 @@ export default function NexusClashApp() {
         </>
       )}
       <footer className="nx-footer">
-        <span>GOLDEN FLOWER CLUSTER MARIGOLD &copy; 2026</span>
-        <span>Dipersembahkan oleh Warga Cluster {EVENT.cluster} &middot; Blok {EVENT.blok} &mdash; dalam rangka {EVENT.tema}</span>
+        <span>GOLDEN FLOWER &copy; 2026</span>
+        <span>Dipersembahkan oleh Warga Cluster {EVENT.cluster} &mdash; dalam rangka {EVENT.tema}</span>
       </footer>
     </div>
   );
@@ -906,7 +913,7 @@ html, body, #root {
 .is-revealed .nx-eyebrow { animation: nxFadeUp 0.6s 0.15s ease forwards; }
 
 .nx-hero-title {
-  font-size: clamp(26px, 7vw, 68px); font-weight: 900; line-height: 1.08; margin: 0 0 60px;
+  font-size: clamp(26px, 7vw, 68px); font-weight: 900; line-height: 1.08; margin: 0 0 40px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   letter-spacing: -0.01em;
 }
