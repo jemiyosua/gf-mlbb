@@ -690,7 +690,7 @@ function Register() {
               onChange={(e) => setClusterRumah(e.target.value)}
             >
               <option value="" disabled>Pilih cluster rumah Anda</option>
-              <option value="Cluster Golden Flower">Cluster Golden Flower</option>
+              <option value="Cluster Golden Flower">Cluster Marigold</option>
               <option value="Cluster Camelia">Cluster Camelia</option>
             </select>
           </div>
