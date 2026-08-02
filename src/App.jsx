@@ -536,23 +536,29 @@ function Register() {
     setStatus("submitting");
 
     try {
+      const payload = {
+        method: "INSERT",
+        nama: nama.trim(),
+        nomor_wa: noHp.trim(),
+        nickname: nickname.trim(),
+        game_id: gameId.trim(),
+        game_server: server.trim(),
+        cluster_rumah: clusterRumah.trim(),
+        blok_rumah: blokRumah.trim(),
+        nomor_rumah: nomorRumah.trim(),
+      };
+
+      console.log("Payload:", payload);
+
       const response = await fetch("https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          method: "INSERT",
-          nama: nama.trim(),
-          nomor_wa: noHp.trim(),
-          nickname: nickname.trim(),
-          game_id: gameId.trim(),
-          game_server: server.trim(),
-          cluster_rumah: clusterRumah.trim(),
-          blok_rumah: blokRumah.trim(),
-          nomor_rumah: nomorRumah.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
+
+      console.log("Response status:", response.status);
 
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
@@ -560,6 +566,7 @@ function Register() {
       }
 
       const data = await response.json();
+      console.log("Response data:", data);
       setStatus("success");
       alert(`✅ PENDAFTARAN BERHASIL!\n\nNama: ${nama}\nNomor WA: ${noHp}\nNickname: ${nickname}\n\nTerima kasih telah mendaftar di Turnamen E-Sports Cluster Golden Flower. Kami akan menghubungi Anda segera melalui WhatsApp.`);
     } catch (err) {
