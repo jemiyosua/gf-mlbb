@@ -3,6 +3,7 @@ import {
   Trophy, Users, Calendar, Zap, Crown, ChevronRight, Menu, X,
   Clock, MapPin, Swords, ChevronDown, Radio, Flag, Lock, Plus, Trash2, Check
 } from "lucide-react";
+import Swal from "sweetalert2";
 
 /* ------------------------------------------------------------------ */
 /*  DATA                                                              */
@@ -479,56 +480,56 @@ function Register() {
     
     // Validasi Nama
     if (!nama.trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nama wajib diisi");
+      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Nama wajib diisi", confirmButtonColor: "#0B80F4" });
       document.getElementById("namaInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Nomor HP
     if (!noHp.trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nomor HP wajib diisi");
+      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Nomor WA wajib diisi", confirmButtonColor: "#0B80F4" });
       document.getElementById("hpInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Nickname Akun
     if (!nickname.trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nickname Akun wajib diisi");
+      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Nickname Akun wajib diisi", confirmButtonColor: "#0B80F4" });
       document.getElementById("nicknameInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi ID Game
     if (!gameId.toString().trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- ID Game wajib diisi (hanya angka)");
+      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "ID Game wajib diisi (hanya angka)", confirmButtonColor: "#0B80F4" });
       document.getElementById("gameIdInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Server Game
     if (!server.toString().trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Server Game wajib diisi (hanya angka)");
+      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Server Game wajib diisi (hanya angka)", confirmButtonColor: "#0B80F4" });
       document.getElementById("serverInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Cluster Rumah
     if (!clusterRumah.trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Cluster Rumah wajib diisi");
+      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Cluster Rumah wajib dipilih", confirmButtonColor: "#0B80F4" });
       document.getElementById("clusterInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Blok Rumah
     if (!blokRumah.trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Blok Rumah wajib diisi");
+      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Blok Rumah wajib diisi", confirmButtonColor: "#0B80F4" });
       document.getElementById("blokInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     // Validasi Nomor Rumah
     if (!nomorRumah.trim()) {
-      alert("❌ Form tidak lengkap!\n\nBagian yang harus diisi:\n- Nomor Rumah wajib diisi");
+      Swal.fire({ icon: "warning", title: "Form Tidak Lengkap", text: "Nomor Rumah wajib diisi", confirmButtonColor: "#0B80F4" });
       document.getElementById("nomorRumahInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
@@ -561,12 +562,22 @@ function Register() {
 
       const data = await response.json();
       setStatus("success");
-      setTimeout(() => {
-        alert(`✅ PENDAFTARAN BERHASIL!\n\nNama: ${nama}\nNomor HP: ${noHp}\nNickname: ${nickname}\n\nTerima kasih telah mendaftar di Turnamen E-Sports Cluster Golden Flower. Kami akan menghubungi Anda segera dengan detail lebih lanjut.`);
-      }, 500);
+      Swal.fire({
+        icon: "success",
+        title: "Pendaftaran Berhasil!",
+        html: `<b>${nama}</b> telah berhasil terdaftar dalam Turnamen E-Sports Cluster Golden Flower.<br><br>Kami akan menghubungi Anda melalui WhatsApp.`,
+        confirmButtonColor: "#0B80F4",
+        confirmButtonText: "OK",
+      });
     } catch (err) {
       setStatus("idle");
-      alert(`❌ Gagal mengirim pendaftaran!\n\n${err.message}\n\nSilakan coba lagi.`);
+      Swal.fire({
+        icon: "error",
+        title: "Pendaftaran Gagal!",
+        text: `${err.message}. Silakan coba lagi.`,
+        confirmButtonColor: "#0B80F4",
+        confirmButtonText: "Coba Lagi",
+      });
     }
   };
 
@@ -1084,6 +1095,31 @@ html, body, #root {
 }
 
 /* ---------- FORM ---------- */
+.nx-alert {
+  display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-radius: 10px;
+  animation: nxFadeUp 0.3s ease forwards; position: relative;
+}
+.nx-alert-success {
+  background: rgba(0, 200, 83, 0.08); border: 1px solid rgba(0, 200, 83, 0.4);
+}
+.nx-alert-error {
+  background: rgba(255, 59, 48, 0.08); border: 1px solid rgba(255, 59, 48, 0.4);
+}
+.nx-alert-icon {
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0;
+}
+.nx-alert-success .nx-alert-icon { background: rgba(0, 200, 83, 0.15); color: #00C853; }
+.nx-alert-error .nx-alert-icon { background: rgba(255, 59, 48, 0.15); color: #FF3B30; }
+.nx-alert-content { flex: 1; }
+.nx-alert-content strong { display: block; font-size: 14px; margin-bottom: 4px; }
+.nx-alert-success .nx-alert-content strong { color: #00C853; }
+.nx-alert-error .nx-alert-content strong { color: #FF3B30; }
+.nx-alert-content p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.5; }
+.nx-alert-close {
+  background: none; border: none; color: var(--muted); padding: 4px; cursor: pointer;
+  border-radius: 4px; transition: color 0.2s;
+}
+.nx-alert-close:hover { color: var(--text); }
 .nx-form { max-width: 600px; margin: 40px auto 0; display: flex; flex-direction: column; gap: 24px; background: var(--bg-panel); padding: 32px; border-radius: var(--radius); border: 1px solid var(--line); }
 .nx-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 600px) { .nx-form-grid { grid-template-columns: 1fr; } }
