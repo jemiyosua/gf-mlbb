@@ -293,14 +293,7 @@ function Home({ go }) {
             Jadwal &amp; Hasil
           </button>
         </div>
-        // <div className="nx-hero-stats">
-          // <CountStat value={8} label="Tim Bertanding" />
-          // <CountStat value={7} label="Total Pertandingan" />
-          // <CountStat value={3} label="Babak Eliminasi" />
-          // <CountStat value={1} label="Grand Final" />
-        // </div>
       </div>
-      // <div className="nx-scroll-cue" aria-hidden="true"><ChevronDown size={20} /></div>
     </section>
   );
 }
