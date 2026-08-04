@@ -278,7 +278,7 @@ function Home({ go }) {
       <div className={`nx-hero-content ${revealed ? "is-revealed" : ""}`}>
         <div className="nx-eyebrow">
           <Radio size={13} className="nx-eyebrow-dot" />
-          TURNAMEN E-SPORTS &middot; {EVENT.tema} &middot; 8 TIM
+          TURNAMEN E-SPORTS &middot; {EVENT.tema}
         </div>
         <h1 className="nx-hero-title">
           <span className="nx-title-line nx-title-slam-left">GOLDEN FLOWER</span>
@@ -293,14 +293,14 @@ function Home({ go }) {
             Jadwal &amp; Hasil
           </button>
         </div>
-        <div className="nx-hero-stats">
-          <CountStat value={8} label="Tim Bertanding" />
-          <CountStat value={7} label="Total Pertandingan" />
-          <CountStat value={3} label="Babak Eliminasi" />
-          <CountStat value={1} label="Grand Final" />
-        </div>
+        // <div className="nx-hero-stats">
+          // <CountStat value={8} label="Tim Bertanding" />
+          // <CountStat value={7} label="Total Pertandingan" />
+          // <CountStat value={3} label="Babak Eliminasi" />
+          // <CountStat value={1} label="Grand Final" />
+        // </div>
       </div>
-      <div className="nx-scroll-cue" aria-hidden="true"><ChevronDown size={20} /></div>
+      // <div className="nx-scroll-cue" aria-hidden="true"><ChevronDown size={20} /></div>
     </section>
   );
 }
