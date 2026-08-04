@@ -828,7 +828,7 @@ function Register() {
 
 export default function NexusClashApp() {
   const [page, setPage] = useState("home");
-  const [showBracket, setShowBracket] = useState(true);
+  const [showBracket, setShowBracket] = useState(false);
 
   const go = useCallback((p) => {
     setPage(p);
