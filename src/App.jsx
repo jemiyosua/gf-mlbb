@@ -933,7 +933,7 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-title-line { display: inline-block; opacity: 0; max-width: 100%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary) 55%, var(--primary) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 46px rgba(11,128,244,0.25); }
 .is-revealed .nx-title-slam-left { animation: nxSlamLeft 0.75s 0.25s cubic-bezier(.2,.9,.25,1.1) forwards; }
 .is-revealed .nx-title-slam-right { animation: nxSlamRight 0.75s 0.4s cubic-bezier(.2,.9,.25,1.1) forwards; }
-.nx-hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 52px; opacity: 0; transform: translateY(8px); }
+.nx-hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 30px; opacity: 0; transform: translateY(8px); }
 .is-revealed .nx-hero-cta { animation: nxFadeUp 0.6s 0.82s ease forwards; }
 .nx-btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; letter-spacing: 0.02em; padding: 13px 26px; border-radius: 8px; border: 1px solid transparent; transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease; white-space: nowrap; }
 .nx-btn:active { transform: scale(0.97); }
