@@ -434,21 +434,51 @@ function Bracket({ go }) {
     animRef.current = requestAnimationFrame(animate);
   };
 
-  const assignToTeam = () => {
-    if (!selectedPlayer) return;
-    setTeams((prev) => {
-      const updated = [...prev];
-      let idx = currentTeamIdx;
-      for (let i = 0; i < updated.length; i++) {
-        const checkIdx = (currentTeamIdx + i) % updated.length;
-        if (updated[checkIdx].members.length < TEAM_SIZE) { idx = checkIdx; break; }
+  const [assigning, setAssigning] = useState(false);
+
+  const assignToTeam = async () => {
+    if (!selectedPlayer || assigning) return;
+
+    // Tentukan tim tujuan
+    let targetIdx = currentTeamIdx;
+    for (let i = 0; i < teams.length; i++) {
+      const checkIdx = (currentTeamIdx + i) % teams.length;
+      if (teams[checkIdx].members.length < TEAM_SIZE) { targetIdx = checkIdx; break; }
+    }
+    const nomorTeam = targetIdx + 1;
+
+    setAssigning(true);
+    try {
+      const response = await fetch("https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: "UPDATE",
+          nomor_team: String(nomorTeam),
+          id: selectedPlayer.id,
+        }),
+      });
+
+      if (!response.ok) throw new Error(`Request gagal dengan status ${response.status}`);
+      const data = await response.json();
+
+      if (data.error_code === "0") {
+        setTeams((prev) => {
+          const updated = [...prev];
+          updated[targetIdx] = { ...updated[targetIdx], members: [...updated[targetIdx].members, selectedPlayer] };
+          setCurrentTeamIdx((targetIdx + 1) % updated.length);
+          return updated;
+        });
+        setUnassigned((prev) => prev.filter((p) => p.id !== selectedPlayer.id));
+        setSelectedPlayer(null);
+      } else {
+        alert(`❌ Gagal memasukkan ke tim!\n\n${data.error_message}`);
       }
-      updated[idx] = { ...updated[idx], members: [...updated[idx].members, selectedPlayer] };
-      setCurrentTeamIdx((idx + 1) % updated.length);
-      return updated;
-    });
-    setUnassigned((prev) => prev.filter((p) => p.id !== selectedPlayer.id));
-    setSelectedPlayer(null);
+    } catch (err) {
+      alert(`❌ Gagal memasukkan ke tim!\n\n${err.message}`);
+    } finally {
+      setAssigning(false);
+    }
   };
 
   const resetSpin = () => {
@@ -465,8 +495,7 @@ function Bracket({ go }) {
   const totalPlayers = players.length;
   const totalTeams = Math.ceil(totalPlayers / TEAM_SIZE);
   const allAssigned = unassigned.length === 0 && players.length > 0;
-  const filledTeams = teams.filter((t) => t.members.length > 0);
-  const bracketSize = filledTeams.length <= 1 ? 2 : Math.pow(2, Math.ceil(Math.log2(filledTeams.length)));
+  const bracketSize = totalTeams <= 1 ? 2 : Math.pow(2, Math.ceil(Math.log2(totalTeams)));
 
   const generateRounds = () => {
     const rounds = [];
@@ -477,8 +506,8 @@ function Bracket({ go }) {
       const matches = [];
       for (let i = 0; i < matchCount; i++) {
         if (roundIndex === 0) {
-          const teamA = filledTeams[i * 2] || null;
-          const teamB = filledTeams[i * 2 + 1] || null;
+          const teamA = teams[i * 2] || null;
+          const teamB = teams[i * 2 + 1] || null;
           matches.push({ teamA, teamB });
         } else { matches.push({ teamA: null, teamB: null }); }
       }
@@ -543,7 +572,9 @@ function Bracket({ go }) {
                           Terpilih: <strong style={{ color: "var(--primary)", fontSize: "18px" }}>{selectedPlayer.nickname}</strong>
                           <span style={{ color: "var(--muted)", fontSize: "13px", marginLeft: "8px" }}>({selectedPlayer.nama})</span>
                         </p>
-                        <button className="nx-btn nx-btn-primary" onClick={assignToTeam}>Masukkan ke Tim {currentTeamIdx + 1} <ChevronRight size={16} /></button>
+                        <button className="nx-btn nx-btn-primary" onClick={assignToTeam} disabled={assigning}>
+                          {assigning ? "Menyimpan..." : `Masukkan ke Tim ${currentTeamIdx + 1}`} <ChevronRight size={16} />
+                        </button>
                       </div>
                     )}
                     <button className="nx-btn nx-btn-ghost" onClick={resetSpin} style={{ marginTop: "10px" }}>Reset Semua</button>
@@ -568,33 +599,30 @@ function Bracket({ go }) {
               </div>
             </div>
 
-            {allAssigned && (
-              <>
-                <div style={{ marginTop: "50px", borderTop: "1px solid var(--line)", paddingTop: "30px" }}>
-                  <h3 style={{ textAlign: "center", marginBottom: "20px" }}>Bagan Pertandingan</h3>
-                </div>
-                <div className="nx-bracket-container">
-                  {generateRounds().map((round, rIdx) => (
-                    <div className="nx-bracket-round" key={rIdx}>
-                      <div className="nx-bracket-round-label">{round.label}</div>
-                      <div className="nx-bracket-matches">
-                        {round.matches.map((match, mIdx) => (
-                          <div className="nx-bracket-match" key={mIdx}>
-                            <div className={`nx-bracket-team ${match.teamA ? "" : "is-bye"}`}>
-                              <span className="nx-bracket-team-name">{match.teamA ? match.teamA.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
-                            </div>
-                            <div className="nx-bracket-vs">VS</div>
-                            <div className={`nx-bracket-team ${match.teamB ? "" : "is-bye"}`}>
-                              <span className="nx-bracket-team-name">{match.teamB ? match.teamB.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
-                            </div>
-                          </div>
-                        ))}
+            {/* BAGAN PERTANDINGAN - selalu tampil */}
+            <div style={{ marginTop: "50px", borderTop: "1px solid var(--line)", paddingTop: "30px" }}>
+              <h3 style={{ textAlign: "center", marginBottom: "20px" }}>Bagan Pertandingan</h3>
+            </div>
+            <div className="nx-bracket-container">
+              {generateRounds().map((round, rIdx) => (
+                <div className="nx-bracket-round" key={rIdx}>
+                  <div className="nx-bracket-round-label">{round.label}</div>
+                  <div className="nx-bracket-matches">
+                    {round.matches.map((match, mIdx) => (
+                      <div className="nx-bracket-match" key={mIdx}>
+                        <div className={`nx-bracket-team ${match.teamA ? "" : "is-bye"}`}>
+                          <span className="nx-bracket-team-name">{match.teamA ? match.teamA.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
+                        </div>
+                        <div className="nx-bracket-vs">VS</div>
+                        <div className={`nx-bracket-team ${match.teamB ? "" : "is-bye"}`}>
+                          <span className="nx-bracket-team-name">{match.teamB ? match.teamB.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </>
-            )}
+              ))}
+            </div>
           </>
         )}
       </div>
@@ -835,7 +863,7 @@ function Register() {
 
 export default function NexusClashApp() {
   const [page, setPage] = useState("home");
-  const [showBracket, setShowBracket] = useState(false);
+  const [showBracket, setShowBracket] = useState(true);
 
   const go = useCallback((p) => {
     setPage(p);
