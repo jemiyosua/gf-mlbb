@@ -299,6 +299,258 @@ function Home({ go }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  LEAGUE BRACKET (3 Teams Round-Robin)                               */
+/* ------------------------------------------------------------------ */
+
+function LeagueBracket({ teams }) {
+  // State: scores[matchId] = { scoreA: number, scoreB: number, games: [{winnerTeamId},...] }
+  const [matchData, setMatchData] = useState({});
+
+  // Generate all match pairs for round-robin (3 teams = 3 matches)
+  const matches = [];
+  for (let i = 0; i < teams.length; i++) {
+    for (let j = i + 1; j < teams.length; j++) {
+      matches.push({ id: `${i}-${j}`, teamA: teams[i], teamB: teams[j] });
+    }
+  }
+
+  const initMatch = (matchId) => ({
+    scoreA: 0,
+    scoreB: 0,
+    games: [], // array of { winner: teamId }
+    finished: false,
+    winner: null,
+  });
+
+  const getMatchData = (matchId) => matchData[matchId] || initMatch(matchId);
+
+  const recordGame = (matchId, winnerTeamId, teamAId, teamBId) => {
+    setMatchData((prev) => {
+      const current = prev[matchId] || initMatch(matchId);
+      if (current.finished) return prev; // Already finished BO3
+
+      const newGames = [...current.games, { winner: winnerTeamId }];
+      const newScoreA = newGames.filter((g) => g.winner === teamAId).length;
+      const newScoreB = newGames.filter((g) => g.winner === teamBId).length;
+      const finished = newScoreA === 2 || newScoreB === 2;
+      const winner = finished ? (newScoreA === 2 ? teamAId : teamBId) : null;
+
+      return {
+        ...prev,
+        [matchId]: {
+          scoreA: newScoreA,
+          scoreB: newScoreB,
+          games: newGames,
+          finished,
+          winner,
+        },
+      };
+    });
+  };
+
+  const resetMatch = (matchId) => {
+    setMatchData((prev) => {
+      const updated = { ...prev };
+      delete updated[matchId];
+      return updated;
+    });
+  };
+
+  // Calculate wins per team from finished matches
+  const winsMap = {};
+  teams.forEach((t) => { winsMap[t.id] = 0; });
+  Object.values(matchData).forEach((md) => {
+    if (md.finished && md.winner && winsMap[md.winner] !== undefined) {
+      winsMap[md.winner] += 1;
+    }
+  });
+
+  // Calculate game wins/losses per team (for statistics)
+  const gameWinsMap = {};
+  const gameLossesMap = {};
+  teams.forEach((t) => { gameWinsMap[t.id] = 0; gameLossesMap[t.id] = 0; });
+  matches.forEach((match) => {
+    const md = matchData[match.id];
+    if (md) {
+      md.games.forEach((g) => {
+        if (g.winner === match.teamA.id) {
+          gameWinsMap[match.teamA.id] += 1;
+          gameLossesMap[match.teamB.id] += 1;
+        } else {
+          gameWinsMap[match.teamB.id] += 1;
+          gameLossesMap[match.teamA.id] += 1;
+        }
+      });
+    }
+  });
+
+  // Determine standings
+  const allMatchesPlayed = matches.every((m) => matchData[m.id]?.finished);
+  const standings = teams
+    .map((t) => ({
+      ...t,
+      wins: winsMap[t.id] || 0,
+      gameWins: gameWinsMap[t.id] || 0,
+      gameLosses: gameLossesMap[t.id] || 0,
+    }))
+    .sort((a, b) => b.wins - a.wins || (b.gameWins - b.gameLosses) - (a.gameWins - a.gameLosses));
+
+  const getRank = (wins) => {
+    if (wins === 2) return { rank: 1, emoji: "🥇", label: "Juara 1" };
+    if (wins === 1) return { rank: 2, emoji: "🥈", label: "Juara 2" };
+    return { rank: 3, emoji: "🥉", label: "Juara 3" };
+  };
+
+  return (
+    <div className="nx-league-wrap">
+      {/* Match Cards with BO3 */}
+      <div className="nx-league-matches">
+        {matches.map((match, idx) => {
+          const md = getMatchData(match.id);
+          const currentGame = md.games.length + 1;
+          return (
+            <div className={`nx-league-match-card ${md.finished ? "is-finished" : ""}`} key={match.id}>
+              <div className="nx-league-match-header">
+                <div className="nx-league-match-label">Pertandingan {idx + 1}</div>
+                <span className="nx-league-bo3-badge">BO3</span>
+              </div>
+
+              {/* Scoreboard */}
+              <div className="nx-league-scoreboard">
+                <div className={`nx-league-score-team ${md.winner === match.teamA.id ? "is-winner" : ""}`}>
+                  <span className="nx-league-score-name">{match.teamA.name}</span>
+                  <span className="nx-league-score-num">{md.scoreA}</span>
+                </div>
+                <div className="nx-league-score-divider">
+                  {md.finished ? <Crown size={16} style={{ color: "#FFC93C" }} /> : <span>—</span>}
+                </div>
+                <div className={`nx-league-score-team ${md.winner === match.teamB.id ? "is-winner" : ""}`}>
+                  <span className="nx-league-score-num">{md.scoreB}</span>
+                  <span className="nx-league-score-name">{match.teamB.name}</span>
+                </div>
+              </div>
+
+              {/* Game Details */}
+              <div className="nx-league-games">
+                {[1, 2, 3].map((gameNum) => {
+                  const game = md.games[gameNum - 1];
+                  const isPlayed = !!game;
+                  const isCurrent = !md.finished && gameNum === currentGame;
+                  const isSkipped = md.finished && !isPlayed;
+                  return (
+                    <div className={`nx-league-game ${isPlayed ? "is-played" : ""} ${isCurrent ? "is-current" : ""} ${isSkipped ? "is-skipped" : ""}`} key={gameNum}>
+                      <span className="nx-league-game-label">Game {gameNum}</span>
+                      {isPlayed ? (
+                        <span className="nx-league-game-winner">
+                          <Crown size={10} /> {game.winner === match.teamA.id ? match.teamA.name : match.teamB.name}
+                        </span>
+                      ) : isSkipped ? (
+                        <span className="nx-league-game-skip">—</span>
+                      ) : isCurrent ? (
+                        <div className="nx-league-game-btns">
+                          <button
+                            className="nx-league-game-btn"
+                            onClick={() => recordGame(match.id, match.teamA.id, match.teamA.id, match.teamB.id)}
+                            title={`${match.teamA.name} menang game ${gameNum}`}
+                          >
+                            {match.teamA.name}
+                          </button>
+                          <button
+                            className="nx-league-game-btn"
+                            onClick={() => recordGame(match.id, match.teamB.id, match.teamA.id, match.teamB.id)}
+                            title={`${match.teamB.name} menang game ${gameNum}`}
+                          >
+                            {match.teamB.name}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="nx-league-game-pending">Menunggu</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Match Result */}
+              {md.finished && (
+                <div className="nx-league-match-result">
+                  <Trophy size={14} />
+                  <span>Pemenang: <strong>{md.winner === match.teamA.id ? match.teamA.name : match.teamB.name}</strong></span>
+                  <span className="nx-league-match-score-final">({md.scoreA} - {md.scoreB})</span>
+                </div>
+              )}
+
+              {/* Reset button */}
+              {md.games.length > 0 && (
+                <button className="nx-league-reset-btn" onClick={() => resetMatch(match.id)}>
+                  Reset Pertandingan
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Standings Table */}
+      <div className="nx-league-standings">
+        <h4 style={{ textAlign: "center", marginBottom: "16px", color: "var(--primary)" }}>Klasemen & Statistik</h4>
+        <table className="nx-league-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tim</th>
+              <th>Match (M/K)</th>
+              <th>Game (M/K)</th>
+              <th>Selisih Game</th>
+              {allMatchesPlayed && <th>Peringkat</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {standings.map((t, idx) => {
+              const matchLosses = (teams.length - 1) - t.wins;
+              const finishedCount = matches.filter((m) => matchData[m.id]?.finished).length;
+              const gameDiff = t.gameWins - t.gameLosses;
+              const rankInfo = allMatchesPlayed ? getRank(t.wins) : null;
+              return (
+                <tr key={t.id} className={allMatchesPlayed && rankInfo.rank === 1 ? "is-champion" : ""}>
+                  <td>{idx + 1}</td>
+                  <td style={{ fontWeight: 600 }}>{t.name}</td>
+                  <td>
+                    <span style={{ color: "#00FFA3", fontWeight: 700 }}>{t.wins}</span>
+                    <span style={{ color: "var(--muted)" }}> / </span>
+                    <span style={{ color: "#FF4D4D", fontWeight: 700 }}>{matchLosses}</span>
+                  </td>
+                  <td>
+                    <span style={{ color: "#00FFA3", fontWeight: 700 }}>{t.gameWins}</span>
+                    <span style={{ color: "var(--muted)" }}> / </span>
+                    <span style={{ color: "#FF4D4D", fontWeight: 700 }}>{t.gameLosses}</span>
+                  </td>
+                  <td style={{ fontWeight: 700, color: gameDiff > 0 ? "#00FFA3" : gameDiff < 0 ? "#FF4D4D" : "var(--muted)" }}>
+                    {gameDiff > 0 ? `+${gameDiff}` : gameDiff}
+                  </td>
+                  {allMatchesPlayed && (
+                    <td>
+                      <span className={`nx-league-rank rank-${rankInfo.rank}`}>
+                        {rankInfo.emoji} {rankInfo.label}
+                      </span>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {!allMatchesPlayed && (
+          <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "12px", marginTop: "12px" }}>
+            Klik nama tim pemenang tiap game. Format BO3: tim pertama yang menang 2 game memenangkan pertandingan.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  BRACKET (with Spin Wheel)                                          */
 /* ------------------------------------------------------------------ */
 
@@ -521,7 +773,7 @@ function Bracket({ go }) {
       <HexField dense />
       <div className="nx-page-inner" style={{ paddingTop: "60px" }}>
         <div className="nx-section-head" style={{ textAlign: "center" }}>
-          <span className="nx-section-eyebrow">Format Eliminasi Tunggal</span>
+          <span className="nx-section-eyebrow">{totalTeams === 3 ? "Format Liga Round Robin" : "Format Eliminasi Tunggal"}</span>
           <h1>Bagan Turnamen</h1>
         </div>
         {loading ? (
@@ -594,28 +846,40 @@ function Bracket({ go }) {
 
             {/* BAGAN PERTANDINGAN - selalu tampil */}
             <div style={{ marginTop: "50px", borderTop: "1px solid var(--line)", paddingTop: "30px" }}>
-              <h3 style={{ textAlign: "center", marginBottom: "20px" }}>Bagan Pertandingan</h3>
+              <h3 style={{ textAlign: "center", marginBottom: "20px" }}>
+                {totalTeams === 3 ? "Format Liga (Round Robin)" : "Bagan Pertandingan"}
+              </h3>
+              {totalTeams === 3 && (
+                <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "13px", marginBottom: "24px" }}>
+                  Semua tim saling bertemu dengan format <strong style={{ color: "var(--primary)" }}>Best of 3 (BO3)</strong>. Penentuan juara berdasarkan jumlah kemenangan match:<br />
+                  🥇 2x Menang = Juara 1 &nbsp;|&nbsp; 🥈 1x Menang = Juara 2 &nbsp;|&nbsp; 🥉 0x Menang = Juara 3
+                </p>
+              )}
             </div>
-            <div className="nx-bracket-container">
-              {generateRounds().map((round, rIdx) => (
-                <div className="nx-bracket-round" key={rIdx}>
-                  <div className="nx-bracket-round-label">{round.label}</div>
-                  <div className="nx-bracket-matches">
-                    {round.matches.map((match, mIdx) => (
-                      <div className="nx-bracket-match" key={mIdx}>
-                        <div className={`nx-bracket-team ${match.teamA ? "" : "is-bye"}`}>
-                          <span className="nx-bracket-team-name">{match.teamA ? match.teamA.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
+            {totalTeams === 3 ? (
+              <LeagueBracket teams={teams} />
+            ) : (
+              <div className="nx-bracket-container">
+                {generateRounds().map((round, rIdx) => (
+                  <div className="nx-bracket-round" key={rIdx}>
+                    <div className="nx-bracket-round-label">{round.label}</div>
+                    <div className="nx-bracket-matches">
+                      {round.matches.map((match, mIdx) => (
+                        <div className="nx-bracket-match" key={mIdx}>
+                          <div className={`nx-bracket-team ${match.teamA ? "" : "is-bye"}`}>
+                            <span className="nx-bracket-team-name">{match.teamA ? match.teamA.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
+                          </div>
+                          <div className="nx-bracket-vs">VS</div>
+                          <div className={`nx-bracket-team ${match.teamB ? "" : "is-bye"}`}>
+                            <span className="nx-bracket-team-name">{match.teamB ? match.teamB.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
+                          </div>
                         </div>
-                        <div className="nx-bracket-vs">VS</div>
-                        <div className={`nx-bracket-team ${match.teamB ? "" : "is-bye"}`}>
-                          <span className="nx-bracket-team-name">{match.teamB ? match.teamB.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -758,18 +1022,23 @@ function Register() {
         throw new Error(errData?.responsemessage || `Request gagal dengan status ${response.status}`);
       }
       const data = await response.json();
-      if (data.errorcode === 0) {
+      if (data.error_code === "0" || data.errorcode === 0) {
         setStatus("success");
-      } else if (data.errorcode === 1) {
+      } else if (data.error_code === "1" || data.errorcode === 1) {
         setStatus("idle");
-        alert(`❌ ${data.errormessage}`);
+        alert(`❌ ${data.error_message || data.errormessage || "Pendaftaran gagal"}`);
       } else {
         setStatus("idle");
-        alert(`❌ ${data.responsemessage}`);
+        alert(`❌ ${data.error_message || data.responsemessage || "Pendaftaran gagal"}`);
       }
     } catch (err) {
       setStatus("idle");
-      alert(`❌ Pendaftaran Gagal!\n\n${err.message}\n\nSilakan coba lagi.`);
+      const isNetworkError = err.message === "Failed to fetch" || err.name === "TypeError";
+      if (isNetworkError) {
+        alert(`❌ Pendaftaran Gagal!\n\nTidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.\n\nJika masalah berlanjut, coba nonaktifkan ad-blocker atau gunakan jaringan lain.`);
+      } else {
+        alert(`❌ Pendaftaran Gagal!\n\n${err.message}\n\nSilakan coba lagi.`);
+      }
     }
   };
 
@@ -780,7 +1049,6 @@ function Register() {
         <div className="nx-page-inner" style={{ textAlign: "center", paddingTop: "80px" }}>
           <Trophy size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px" }} />
           <h2>Pendaftaran Berhasil!</h2>
-          <p className="nx-section-desc" style={{ textAlign: "center" }}><strong>{nama}</strong> telah berhasil terdaftar dalam Turnamen E-Sports Cluster Golden Flower.</p>
           <button className="nx-btn nx-btn-primary" style={{ marginTop: "30px" }} onClick={() => {
             setStatus("idle"); setNama(""); setNoHp(""); setNickname(""); setGameId(""); setServer(""); setClusterRumah(""); setBlokRumah(""); setNomorRumah("");
           }}>Daftar Peserta Lain</button>
@@ -789,69 +1057,69 @@ function Register() {
     );
   }
 
-  return (
-    <section id="register" className="nx-page">
-      <HexField dense />
-      <div className="nx-page-inner">
-        <div className="nx-section-head">
-          <span className="nx-section-eyebrow">Pendaftaran Peserta</span>
-          <h1>Daftarkan Diri Anda</h1>
-        </div>
-        <div className="nx-form">
-          <div className="nx-form-divider">Data Peserta</div>
-          <div className="nx-form-group">
-            <label>Nama</label>
-            <input id="namaInput" type="text" className="nx-input" placeholder="Masukkan nama lengkap Anda" value={nama} onChange={(e) => setNama(e.target.value)} />
-          </div>
-          <div className="nx-form-group">
-            <label>Nomor WA Aktif</label>
-            <input id="hpInput" type="text" className="nx-input" placeholder="Contoh: 081234567890" value={noHp} onChange={(e) => setNoHp(e.target.value)} />
-          </div>
-          <div className="nx-form-group">
-            <label>Nickname Akun Game</label>
-            <input id="nicknameInput" type="text" className="nx-input" placeholder="Masukkan nickname akun game Anda" value={nickname} onChange={(e) => setNickname(e.target.value)} />
-          </div>
-          <div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
-            <div className="nx-form-group">
-              <label>ID Game</label>
-              <input id="gameIdInput" type="number" className="nx-input" placeholder="Masukkan ID game" value={gameId} onChange={(e) => setGameId(e.target.value)} />
-            </div>
-            <div className="nx-form-group">
-              <label>Server Game</label>
-              <input id="serverInput" type="number" className="nx-input" placeholder="Masukkan nomor server" value={server} onChange={(e) => setServer(e.target.value)} />
-            </div>
-          </div>
-          <div className="nx-form-group">
-            <label>Cluster Rumah</label>
-            <select id="clusterInput" className="nx-input" value={clusterRumah} onChange={(e) => setClusterRumah(e.target.value)}>
-              <option value="" disabled>Pilih cluster rumah Anda</option>
-              <option value="Cluster Golden Flower">Cluster Marigold</option>
-              <option value="Cluster Camelia">Cluster Camelia</option>
-            </select>
-          </div>
-          <div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
-            <div className="nx-form-group">
-              <label>Blok Rumah</label>
-              <input id="blokInput" type="text" className="nx-input" placeholder="Contoh: A, B, C" value={blokRumah} onChange={(e) => setBlokRumah(e.target.value)} />
-            </div>
-            <div className="nx-form-group">
-              <label>Nomor Rumah</label>
-              <input id="nomorRumahInput" type="text" className="nx-input" placeholder="Contoh: 10, 25" value={nomorRumah} onChange={(e) => setNomorRumah(e.target.value)} />
-            </div>
-          </div>
-          <div className="nx-form-action">
-            <button type="button" className="nx-btn nx-btn-primary" disabled={status === "submitting"} onClick={handleSubmit}>
-              {status === "submitting" ? "Mengirim..." : "Kirim Pendaftaran"}<ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+	return (
+		<section id="register" className="nx-page">
+			<HexField dense />
+			<div className="nx-page-inner">
+				<div className="nx-section-head">
+				<span className="nx-section-eyebrow">Pendaftaran Peserta</span>
+				<h1>Daftarkan Diri Anda</h1>
+				</div>
+				<div className="nx-form">
+				<div className="nx-form-divider">Data Peserta</div>
+				<div className="nx-form-group">
+					<label>Nama</label>
+					<input id="namaInput" type="text" className="nx-input" placeholder="Masukkan nama lengkap Anda" value={nama} onChange={(e) => setNama(e.target.value)} />
+				</div>
+				<div className="nx-form-group">
+					<label>Nomor WA Aktif</label>
+					<input id="hpInput" type="text" className="nx-input" placeholder="Contoh: 081234567890" value={noHp} onChange={(e) => setNoHp(e.target.value)} />
+				</div>
+				<div className="nx-form-group">
+					<label>Nickname Akun Game</label>
+					<input id="nicknameInput" type="text" className="nx-input" placeholder="Masukkan nickname akun game Anda" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+				</div>
+				<div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+					<div className="nx-form-group">
+					<label>ID Game</label>
+					<input id="gameIdInput" type="number" className="nx-input" placeholder="Masukkan ID game" value={gameId} onChange={(e) => setGameId(e.target.value)} />
+					</div>
+					<div className="nx-form-group">
+					<label>Server Game</label>
+					<input id="serverInput" type="number" className="nx-input" placeholder="Masukkan nomor server" value={server} onChange={(e) => setServer(e.target.value)} />
+					</div>
+				</div>
+				<div className="nx-form-group">
+					<label>Cluster Rumah</label>
+					<select id="clusterInput" className="nx-input" value={clusterRumah} onChange={(e) => setClusterRumah(e.target.value)}>
+					<option value="" disabled>Pilih cluster rumah Anda</option>
+					<option value="Cluster Golden Flower">Cluster Marigold</option>
+					<option value="Cluster Camelia">Cluster Camelia</option>
+					</select>
+				</div>
+				<div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+					<div className="nx-form-group">
+					<label>Blok Rumah</label>
+					<input id="blokInput" type="text" className="nx-input" placeholder="Contoh: A, B, C" value={blokRumah} onChange={(e) => setBlokRumah(e.target.value)} />
+					</div>
+					<div className="nx-form-group">
+					<label>Nomor Rumah</label>
+					<input id="nomorRumahInput" type="text" className="nx-input" placeholder="Contoh: 10, 25" value={nomorRumah} onChange={(e) => setNomorRumah(e.target.value)} />
+					</div>
+				</div>
+				<div className="nx-form-action">
+					<button type="button" className="nx-btn nx-btn-primary" disabled={status === "submitting"} onClick={handleSubmit}>
+					{status === "submitting" ? "Mengirim..." : "Kirim Pendaftaran"}<ChevronRight size={16} />
+					</button>
+				</div>
+				</div>
+			</div>
+		</section>
+	);
 }
 
 /* ------------------------------------------------------------------ */
-/*  APP SHELL                                                          */
+/*  APP SHELL                                                         */
 /* ------------------------------------------------------------------ */
 
 export default function NexusClashApp() {
@@ -1051,6 +1319,57 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-spin-canvas { border-radius: 50%; box-shadow: 0 0 30px rgba(11, 128, 244, 0.2); }
 .nx-spin-controls { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .nx-spin-result { text-align: center; padding: 16px; background: var(--bg-panel-2); border-radius: var(--radius); border: 1px solid var(--line); }
+
+/* ---------- LEAGUE (ROUND ROBIN) ---------- */
+.nx-league-wrap { max-width: 750px; margin: 30px auto 0; display: flex; flex-direction: column; gap: 30px; }
+.nx-league-matches { display: flex; flex-direction: column; gap: 20px; }
+.nx-league-match-card { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; transition: border-color 0.2s; }
+.nx-league-match-card.is-finished { border-color: rgba(0,255,163,0.3); }
+.nx-league-match-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.nx-league-match-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary); }
+.nx-league-bo3-badge { font-size: 10px; font-weight: 800; color: var(--text); background: rgba(11,128,244,0.15); border: 1px solid rgba(11,128,244,0.3); padding: 3px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+.nx-league-scoreboard { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; padding: 14px 0; background: var(--bg-panel-2); border-radius: 8px; }
+.nx-league-score-team { display: flex; align-items: center; gap: 12px; }
+.nx-league-score-team.is-winner .nx-league-score-name { color: #00FFA3; }
+.nx-league-score-team.is-winner .nx-league-score-num { color: #00FFA3; text-shadow: 0 0 10px rgba(0,255,163,0.4); }
+.nx-league-score-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.nx-league-score-num { font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 900; color: var(--text); }
+.nx-league-score-divider { color: var(--muted); font-size: 18px; }
+.nx-league-games { display: flex; gap: 8px; margin-bottom: 14px; }
+.nx-league-game { flex: 1; padding: 10px 8px; background: var(--bg-void); border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 70px; justify-content: center; }
+.nx-league-game.is-played { border-color: rgba(0,255,163,0.3); background: rgba(0,255,163,0.03); }
+.nx-league-game.is-current { border-color: var(--primary); background: rgba(11,128,244,0.05); box-shadow: 0 0 8px rgba(11,128,244,0.15); }
+.nx-league-game.is-skipped { opacity: 0.35; }
+.nx-league-game-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.nx-league-game-winner { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #00FFA3; }
+.nx-league-game-skip { color: var(--muted); font-size: 13px; }
+.nx-league-game-pending { color: var(--muted); font-size: 11px; font-style: italic; }
+.nx-league-game-btns { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.nx-league-game-btn { font-size: 11px; font-weight: 600; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg-panel); color: var(--text); cursor: pointer; transition: all 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nx-league-game-btn:hover { border-color: var(--primary); background: rgba(11,128,244,0.1); color: var(--primary); }
+.nx-league-match-result { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; background: rgba(0,255,163,0.06); border: 1px solid rgba(0,255,163,0.2); border-radius: 8px; font-size: 13px; color: #00FFA3; }
+.nx-league-match-score-final { color: var(--muted); font-weight: 600; }
+.nx-league-reset-btn { display: block; margin: 12px auto 0; background: none; border: none; font-size: 11px; color: var(--muted); cursor: pointer; text-decoration: underline; opacity: 0.7; transition: opacity 0.15s; }
+.nx-league-reset-btn:hover { opacity: 1; color: #FF4D4D; }
+.nx-league-standings { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.nx-league-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.nx-league-table thead { background: var(--bg-panel-2); }
+.nx-league-table th { padding: 12px 10px; text-align: center; font-weight: 600; color: var(--primary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--line); }
+.nx-league-table td { padding: 12px 10px; text-align: center; border-bottom: 1px solid var(--line); color: var(--text); }
+.nx-league-table tbody tr:last-child td { border-bottom: none; }
+.nx-league-table tbody tr:hover { background: rgba(11, 128, 244, 0.06); }
+.nx-league-table tbody tr.is-champion { background: rgba(0, 255, 163, 0.06); }
+.nx-league-rank { font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+.nx-league-rank.rank-1 { color: #FFC93C; background: rgba(255,201,60,0.1); }
+.nx-league-rank.rank-2 { color: #C0C0C0; background: rgba(192,192,192,0.1); }
+.nx-league-rank.rank-3 { color: #CD7F32; background: rgba(205,127,50,0.1); }
+@media (max-width: 500px) {
+  .nx-league-games { flex-direction: column; }
+  .nx-league-scoreboard { gap: 10px; }
+  .nx-league-score-name { font-size: 12px; }
+  .nx-league-score-num { font-size: 22px; }
+  .nx-league-table th, .nx-league-table td { padding: 10px 6px; font-size: 12px; }
+}
 
 /* ---------- FOOTER ---------- */
 .nx-footer { border-top: 1px solid var(--line); padding: 22px 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--muted); position: relative; z-index: 2; }
