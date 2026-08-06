@@ -1,51 +1,90 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, Component } from "react";
 import {
   Trophy, Users, Calendar, Zap, Crown, ChevronRight, Menu, X,
   Clock, MapPin, Swords, ChevronDown, Radio, Flag, Lock, Plus, Trash2, Check
 } from "lucide-react";
+import logoGF from "./assets/assets/logo_golden_flower.PNG";
+
+/* ------------------------------------------------------------------ */
+/*  ERROR BOUNDARY                                                     */
+/* ------------------------------------------------------------------ */
+
+class ErrorBoundary extends Component {
+	constructor(props) {
+		super(props);
+		this.state = { hasError: false, error: null };
+	}
+
+	static getDerivedStateFromError(error) {
+		return { hasError: true, error };
+	}
+	
+	render() {
+		if (this.state.hasError) {
+			return (
+				<div style={{ padding: "40px", textAlign: "center", color: "#FF4D4D", background: "#030A14", minHeight: "50vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+				<h2 style={{ color: "#fff", marginBottom: "10px" }}>Terjadi Kesalahan</h2>
+				<p style={{ fontSize: "14px", maxWidth: "500px" }}>{this.state.error?.message || "Unknown error"}</p>
+				<button onClick={() => this.setState({ hasError: false, error: null })} style={{ marginTop: "20px", padding: "10px 20px", background: "#0B80F4", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}>Coba Lagi</button>
+				</div>
+			);
+		}
+		return this.props.children;
+	}
+}
 
 /* ------------------------------------------------------------------ */
 /*  DATA                                                              */
 /* ------------------------------------------------------------------ */
 
 const EVENT = {
-  cluster: "Golden Flower",
-  tema: "HUT RI KE-81",
+	cluster: "Golden Flower",
+	tema: "HUT RI KE-81",
 };
 
+// Default settings (bisa diubah lewat panel admin)
+const DEFAULT_SETTINGS = {
+	registrationOpen: false,
+	showBracket: true,
+	showMatches: true,
+};
+
+// Admin password
+const ADMIN_PASSWORD = "sautmp27";
+
 const TEAMS = [
-  { id: "cw", name: "Crimson Wolves",  tag: "CRW", color: "#FF2E63" },
-  { id: "fv", name: "Frost Vipers",    tag: "FRV", color: "#00D9FF" },
-  { id: "vs", name: "Void Sentinels",  tag: "VOS", color: "#8B6BFF" },
-  { id: "gh", name: "Golden Hydra",    tag: "GLH", color: "#FFC93C" },
-  { id: "ip", name: "Iron Phoenix",    tag: "IRP", color: "#FF8A3D" },
-  { id: "sb", name: "Storm Breakers",  tag: "STB", color: "#00FFA3" },
-  { id: "sr", name: "Shadow Reapers",  tag: "SHR", color: "#C24BFF" },
-  { id: "nt", name: "Neon Tigers",     tag: "NGT", color: "#FF4D8D" },
+	{ id: "cw", name: "Crimson Wolves",  tag: "CRW", color: "#FF2E63" },
+	{ id: "fv", name: "Frost Vipers",    tag: "FRV", color: "#00D9FF" },
+	{ id: "vs", name: "Void Sentinels",  tag: "VOS", color: "#8B6BFF" },
+	{ id: "gh", name: "Golden Hydra",    tag: "GLH", color: "#FFC93C" },
+	{ id: "ip", name: "Iron Phoenix",    tag: "IRP", color: "#FF8A3D" },
+	{ id: "sb", name: "Storm Breakers",  tag: "STB", color: "#00FFA3" },
+	{ id: "sr", name: "Shadow Reapers",  tag: "SHR", color: "#C24BFF" },
+	{ id: "nt", name: "Neon Tigers",     tag: "NGT", color: "#FF4D8D" },
 ];
 
 const team = (id) => TEAMS.find((t) => t.id === id);
 
 const MATCHES = [
-  { id: "qf1", round: "QF", label: "Perempat Final 1", a: "cw", b: "fv", scoreA: 2, scoreB: 1, status: "done", date: "10 Jul 2026", time: "19:00 WIB" },
-  { id: "qf2", round: "QF", label: "Perempat Final 2", a: "vs", b: "gh", scoreA: 2, scoreB: 0, status: "done", date: "10 Jul 2026", time: "21:00 WIB" },
-  { id: "qf3", round: "QF", label: "Perempat Final 3", a: "ip", b: "sb", scoreA: 1, scoreB: 2, status: "done", date: "11 Jul 2026", time: "19:00 WIB" },
-  { id: "qf4", round: "QF", label: "Perempat Final 4", a: "sr", b: "nt", scoreA: 2, scoreB: 0, status: "done", date: "11 Jul 2026", time: "21:00 WIB" },
-  { id: "sf1", round: "SF", label: "Semifinal 1", a: "cw", b: "vs", scoreA: 2, scoreB: 1, status: "done", date: "15 Jul 2026", time: "19:00 WIB" },
-  { id: "sf2", round: "SF", label: "Semifinal 2", a: "sb", b: "sr", scoreA: 1, scoreB: 2, status: "done", date: "15 Jul 2026", time: "21:00 WIB" },
-  { id: "gf", round: "GF", label: "Grand Final", a: "cw", b: "sr", scoreA: null, scoreB: null, status: "upcoming", date: "27 Jul 2026", time: "20:00 WIB" },
+	{ id: "qf1", round: "QF", label: "Perempat Final 1", a: "cw", b: "fv", scoreA: 2, scoreB: 1, status: "done", date: "10 Jul 2026", time: "19:00 WIB" },
+	{ id: "qf2", round: "QF", label: "Perempat Final 2", a: "vs", b: "gh", scoreA: 2, scoreB: 0, status: "done", date: "10 Jul 2026", time: "21:00 WIB" },
+	{ id: "qf3", round: "QF", label: "Perempat Final 3", a: "ip", b: "sb", scoreA: 1, scoreB: 2, status: "done", date: "11 Jul 2026", time: "19:00 WIB" },
+	{ id: "qf4", round: "QF", label: "Perempat Final 4", a: "sr", b: "nt", scoreA: 2, scoreB: 0, status: "done", date: "11 Jul 2026", time: "21:00 WIB" },
+	{ id: "sf1", round: "SF", label: "Semifinal 1", a: "cw", b: "vs", scoreA: 2, scoreB: 1, status: "done", date: "15 Jul 2026", time: "19:00 WIB" },
+	{ id: "sf2", round: "SF", label: "Semifinal 2", a: "sb", b: "sr", scoreA: 1, scoreB: 2, status: "done", date: "15 Jul 2026", time: "21:00 WIB" },
+	{ id: "gf", round: "GF", label: "Grand Final", a: "cw", b: "sr", scoreA: null, scoreB: null, status: "upcoming", date: "27 Jul 2026", time: "20:00 WIB" },
 ];
 
 const winnerOf = (m) => {
-  if (m.status !== "done") return null;
-  return m.scoreA > m.scoreB ? m.a : m.b;
+	if (m.status !== "done") return null;
+	return m.scoreA > m.scoreB ? m.a : m.b;
 };
 
 const ROUND_LABEL = { QF: "Perempat Final", SF: "Semifinal", GF: "Grand Final" };
 const STATUS_META = {
-  done:     { label: "SELESAI",   cls: "st-done" },
-  live:     { label: "LIVE",      cls: "st-live" },
-  upcoming: { label: "MENDATANG", cls: "st-upcoming" },
+	done:     { label: "SELESAI",   cls: "st-done" },
+	live:     { label: "LIVE",      cls: "st-live" },
+	upcoming: { label: "MENDATANG", cls: "st-upcoming" },
 };
 
 /* ------------------------------------------------------------------ */
@@ -53,109 +92,109 @@ const STATUS_META = {
 /* ------------------------------------------------------------------ */
 
 function HexField({ dense }) {
-  const canvasRef = useRef(null);
-  const rafRef = useRef(null);
+	const canvasRef = useRef(null);
+	const rafRef = useRef(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let w, h, dpr;
-    let hexes = [];
-    let pulses = [];
-    let t = 0;
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+		const ctx = canvas.getContext("2d");
+		let w, h, dpr;
+		let hexes = [];
+		let pulses = [];
+		let t = 0;
 
-    const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    function buildHexes() {
-      hexes = [];
-      const size = dense ? 46 : 58;
-      const hexW = size * Math.sqrt(3);
-      const hexH = size * 2 * 0.75;
-      const cols = Math.ceil(w / hexW) + 2;
-      const rows = Math.ceil(h / hexH) + 2;
-      for (let r = -1; r < rows; r++) {
-        for (let c = -1; c < cols; c++) {
-          const x = c * hexW + (r % 2 ? hexW / 2 : 0);
-          const y = r * hexH;
-          hexes.push({ x, y, size, seed: Math.random() * Math.PI * 2 });
-        }
-      }
-      pulses = [];
-      const pulseCount = dense ? 5 : 8;
-      for (let i = 0; i < pulseCount; i++) {
-        pulses.push({
-          x: Math.random() * w,
-          y: h + Math.random() * h,
-          speed: 0.18 + Math.random() * 0.28,
-          drift: (Math.random() - 0.5) * 0.15,
-          r: 1.4 + Math.random() * 1.8,
-          hue: "11,128,244",
-          delay: Math.random() * 300,
-        });
-      }
-    }
+		function buildHexes() {
+			hexes = [];
+			const size = dense ? 46 : 58;
+			const hexW = size * Math.sqrt(3);
+			const hexH = size * 2 * 0.75;
+			const cols = Math.ceil(w / hexW) + 2;
+			const rows = Math.ceil(h / hexH) + 2;
+			for (let r = -1; r < rows; r++) {
+				for (let c = -1; c < cols; c++) {
+					const x = c * hexW + (r % 2 ? hexW / 2 : 0);
+					const y = r * hexH;
+					hexes.push({ x, y, size, seed: Math.random() * Math.PI * 2 });
+				}
+			}
+			pulses = [];
+			const pulseCount = dense ? 5 : 8;
+			for (let i = 0; i < pulseCount; i++) {
+				pulses.push({
+					x: Math.random() * w,
+					y: h + Math.random() * h,
+					speed: 0.18 + Math.random() * 0.28,
+					drift: (Math.random() - 0.5) * 0.15,
+					r: 1.4 + Math.random() * 1.8,
+					hue: "11,128,244",
+					delay: Math.random() * 300,
+				});
+			}
+		}
 
-    function resize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = canvas.clientWidth;
-      h = canvas.clientHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      buildHexes();
-    }
+		function resize() {
+			dpr = Math.min(window.devicePixelRatio || 1, 2);
+			w = canvas.clientWidth;
+			h = canvas.clientHeight;
+			canvas.width = w * dpr;
+			canvas.height = h * dpr;
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			buildHexes();
+		}
 
-    function drawHex(cx, cy, size) {
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const a = (Math.PI / 3) * i + Math.PI / 6;
-        const px = cx + size * Math.cos(a);
-        const py = cy + size * Math.sin(a);
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.stroke();
-    }
+		function drawHex(cx, cy, size) {
+			ctx.beginPath();
+			for (let i = 0; i < 6; i++) {
+				const a = (Math.PI / 3) * i + Math.PI / 6;
+				const px = cx + size * Math.cos(a);
+				const py = cy + size * Math.sin(a);
+				if (i === 0) ctx.moveTo(px, py);
+				else ctx.lineTo(px, py);
+			}
+			ctx.closePath();
+			ctx.stroke();
+		}
 
-    function frame() {
-      t += 1;
-      ctx.clearRect(0, 0, w, h);
-      hexes.forEach((hx) => {
-        const glow = 0.045 + 0.035 * Math.sin(t * 0.012 + hx.seed);
-        ctx.strokeStyle = `rgba(0, 217, 255, ${Math.max(glow, 0.015)})`;
-        ctx.lineWidth = 1;
-        drawHex(hx.x, hx.y, hx.size);
-      });
-      pulses.forEach((p) => {
-        if (p.delay > 0) { p.delay -= 1; return; }
-        p.y -= p.speed * 2.2;
-        p.x += p.drift;
-        if (p.y < -20) { p.y = h + 20; p.x = Math.random() * w; }
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 22);
-        grad.addColorStop(0, `rgba(${p.hue}, 0.55)`);
-        grad.addColorStop(1, `rgba(${p.hue}, 0)`);
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 22, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = `rgba(${p.hue}, 0.9)`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      if (!reduced) rafRef.current = requestAnimationFrame(frame);
-    }
+		function frame() {
+			t += 1;
+			ctx.clearRect(0, 0, w, h);
+			hexes.forEach((hx) => {
+				const glow = 0.045 + 0.035 * Math.sin(t * 0.012 + hx.seed);
+				ctx.strokeStyle = `rgba(0, 217, 255, ${Math.max(glow, 0.015)})`;
+				ctx.lineWidth = 1;
+				drawHex(hx.x, hx.y, hx.size);
+			});
+			pulses.forEach((p) => {
+				if (p.delay > 0) { p.delay -= 1; return; }
+				p.y -= p.speed * 2.2;
+				p.x += p.drift;
+				if (p.y < -20) { p.y = h + 20; p.x = Math.random() * w; }
+				const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 22);
+				grad.addColorStop(0, `rgba(${p.hue}, 0.55)`);
+				grad.addColorStop(1, `rgba(${p.hue}, 0)`);
+				ctx.fillStyle = grad;
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, 22, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.fillStyle = `rgba(${p.hue}, 0.9)`;
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+				ctx.fill();
+			});
+			if (!reduced) rafRef.current = requestAnimationFrame(frame);
+		}
 
-    resize();
-    window.addEventListener("resize", resize);
-    frame();
-    if (reduced) { ctx.clearRect(0, 0, w, h); }
-    return () => { window.removeEventListener("resize", resize); if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [dense]);
+		resize();
+		window.addEventListener("resize", resize);
+		frame();
+		if (reduced) { ctx.clearRect(0, 0, w, h); }
+		return () => { window.removeEventListener("resize", resize); if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+	}, [dense]);
 
-  return <canvas ref={canvasRef} className="nx-hexfield" aria-hidden="true" />;
+	return <canvas ref={canvasRef} className="nx-hexfield" aria-hidden="true" />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -163,85 +202,100 @@ function HexField({ dense }) {
 /* ------------------------------------------------------------------ */
 
 function CountStat({ value, label, suffix = "" }) {
-  const [n, setN] = useState(0);
-  const ref = useRef(null);
-  const done = useRef(false);
+	const [n, setN] = useState(0);
+	const ref = useRef(null);
+	const done = useRef(false);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting && !done.current) {
-            done.current = true;
-            const start = performance.now();
-            const dur = 1100;
-            const tick = (now) => {
-              const p = Math.min((now - start) / dur, 1);
-              const eased = 1 - Math.pow(1 - p, 3);
-              setN(Math.round(eased * value));
-              if (p < 1) requestAnimationFrame(tick);
-            };
-            requestAnimationFrame(tick);
-          }
-        });
-      },
-      { threshold: 0.4 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [value]);
+	useEffect(() => {
+		const el = ref.current;
+		if (!el) return;
+		const io = new IntersectionObserver(
+		(entries) => {
+			entries.forEach((e) => {
+			if (e.isIntersecting && !done.current) {
+				done.current = true;
+				const start = performance.now();
+				const dur = 1100;
+				const tick = (now) => {
+				const p = Math.min((now - start) / dur, 1);
+				const eased = 1 - Math.pow(1 - p, 3);
+				setN(Math.round(eased * value));
+				if (p < 1) requestAnimationFrame(tick);
+				};
+				requestAnimationFrame(tick);
+			}
+			});
+		},
+		{ threshold: 0.4 }
+		);
+		io.observe(el);
+		return () => io.disconnect();
+	}, [value]);
 
-  return (
-    <div className="nx-stat" ref={ref}>
-      <div className="nx-stat-num">{n}{suffix}</div>
-      <div className="nx-stat-label">{label}</div>
-    </div>
-  );
+	return (
+		<div className="nx-stat" ref={ref}>
+			<div className="nx-stat-num">{n}{suffix}</div>
+			<div className="nx-stat-label">{label}</div>
+		</div>
+	);
 }
 
 /* ------------------------------------------------------------------ */
 /*  NAV                                                                */
 /* ------------------------------------------------------------------ */
 
-function Nav({ page, go, showBracket }) {
-  const [open, setOpen] = useState(false);
-  const items = [
-    { id: "home", label: "Beranda" },
-    { id: "bracket", label: "Bagan Turnamen", hidden: !showBracket },
-    { id: "schedule", label: "Jadwal & Hasil" },
-    { id: "players", label: "Peserta" },
-    { id: "register", label: "Pendaftaran" },
-  ].filter((it) => !it.hidden);
+function Nav({ page, go, showBracket, showMatches, isAdmin, onAdminLogin }) {
+	const [open, setOpen] = useState(false);
+	const items = [
+		{ id: "home", label: "Beranda" },
+		{ id: "bracket", label: "Bagan Turnamen", hidden: !showBracket },
+		{ id: "matches", label: "Pertandingan", hidden: !showMatches },
+		{ id: "schedule", label: "Jadwal & Hasil" },
+		{ id: "players", label: "Peserta" },
+		{ id: "register", label: "Pendaftaran" },
+		{ id: "admin", label: isAdmin ? "⚙ Admin" : "Admin" },
+	].filter((it) => !it.hidden);
 
-  return (
-    <header className="nx-nav">
-      <div className="nx-nav-inner">
-        <button className="nx-brand" onClick={() => { go("home"); setOpen(false); }}>
-          <span className="nx-brand-mark"><Zap size={18} strokeWidth={2.5} /></span>
-          <span className="nx-brand-text">GOLDEN<span className="nx-brand-accent">FLOWER</span></span>
-        </button>
-        <nav className="nx-nav-links">
-          {items.map((it) => (
-            <button key={it.id} className={`nx-nav-link ${page === it.id ? "is-active" : ""}`} onClick={() => go(it.id)}>{it.label}</button>
-          ))}
-        </nav>
-        <button className="nx-nav-burger" onClick={() => setOpen((o) => !o)} aria-label="Menu">
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
-      </div>
-      {open && (
-        <div className="nx-nav-mobile">
-          {items.map((it) => (
-            <button key={it.id} className={`nx-nav-mobile-link ${page === it.id ? "is-active" : ""}`} onClick={() => { go(it.id); setOpen(false); }}>
-              {it.label}<ChevronRight size={16} />
-            </button>
-          ))}
-        </div>
-      )}
-    </header>
-  );
+	const handleNavClick = (id) => {
+		if (id === "admin" && !isAdmin) {
+			const pwd = prompt("Masukkan password admin:");
+			if (pwd === ADMIN_PASSWORD) {
+				onAdminLogin();
+				go("admin");
+			}
+		} else {
+			go(id);
+		}
+		setOpen(false);
+	};
+
+	return (
+		<header className="nx-nav">
+		<div className="nx-nav-inner">
+			<button className="nx-brand" onClick={() => { go("home"); setOpen(false); }}>
+			<img src={logoGF} alt="Golden Flower" className="nx-brand-logo" />
+			<span className="nx-brand-text">GOLDEN<span className="nx-brand-accent">FLOWER</span></span>
+			</button>
+			<nav className="nx-nav-links">
+			{items.map((it) => (
+				<button key={it.id} className={`nx-nav-link ${page === it.id ? "is-active" : ""}`} onClick={() => handleNavClick(it.id)}>{it.label}</button>
+			))}
+			</nav>
+			<button className="nx-nav-burger" onClick={() => setOpen((o) => !o)} aria-label="Menu">
+			{open ? <X size={22} /> : <Menu size={22} />}
+			</button>
+		</div>
+		{open && (
+			<div className="nx-nav-mobile">
+			{items.map((it) => (
+				<button key={it.id} className={`nx-nav-mobile-link ${page === it.id ? "is-active" : ""}`} onClick={() => handleNavClick(it.id)}>
+				{it.label}<ChevronRight size={16} />
+				</button>
+			))}
+			</div>
+		)}
+		</header>
+	);
 }
 
 /* ------------------------------------------------------------------ */
@@ -249,15 +303,15 @@ function Nav({ page, go, showBracket }) {
 /* ------------------------------------------------------------------ */
 
 function ClusterRibbon() {
-  const text = `MERDEKA! ${EVENT.tema} \u2014 TURNAMEN E-SPORTS CLUSTER ${EVENT.cluster.toUpperCase()} \u2022 MERAH PUTIH BERKIBAR \u2022`;
-  return (
-    <div className="nx-ribbon" role="note" aria-label="Informasi penyelenggara">
-      <div className="nx-ribbon-track">
-        <span className="nx-ribbon-item"><Flag size={13} />{text}</span>
-        <span className="nx-ribbon-item"><Flag size={13} />{text}</span>
-      </div>
-    </div>
-  );
+	const text = `MERDEKA! ${EVENT.tema} \u2014 TURNAMEN E-SPORTS CLUSTER ${EVENT.cluster.toUpperCase()} \u2022 MERAH PUTIH BERKIBAR \u2022`;
+	return (
+		<div className="nx-ribbon" role="note" aria-label="Informasi penyelenggara">
+			<div className="nx-ribbon-track">
+				<span className="nx-ribbon-item"><Flag size={13} />{text}</span>
+				<span className="nx-ribbon-item"><Flag size={13} />{text}</span>
+			</div>
+		</div>
+	);
 }
 
 /* ------------------------------------------------------------------ */
@@ -265,134 +319,307 @@ function ClusterRibbon() {
 /* ------------------------------------------------------------------ */
 
 function Home({ go }) {
-  const [revealed, setRevealed] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setTimeout(() => setRevealed(true), 60));
-    return () => cancelAnimationFrame(id);
-  }, []);
+	const [revealed, setRevealed] = useState(false);
+	useEffect(() => {
+		const id = requestAnimationFrame(() => setTimeout(() => setRevealed(true), 60));
+		return () => cancelAnimationFrame(id);
+	}, []);
 
-  return (
-    <section id="home" className="nx-hero">
-      <HexField />
-      <div className="nx-hero-scan" aria-hidden="true" />
-      <div className={`nx-hero-content ${revealed ? "is-revealed" : ""}`}>
-        <div className="nx-eyebrow">
-          <Radio size={13} className="nx-eyebrow-dot" />
-          TURNAMEN E-SPORTS &middot; {EVENT.tema}
-        </div>
-        <h1 className="nx-hero-title">
-          <span className="nx-title-line nx-title-slam-left">GOLDEN FLOWER</span>
-        </h1>
-        <div className="nx-hero-cta">
-          <button className="nx-btn nx-btn-primary" onClick={() => go("players")}>
-            <Users size={18} />
-            Lihat Peserta
-          </button>
-          <button className="nx-btn nx-btn-ghost" onClick={() => go("schedule")}>
-            <Calendar size={18} />
-            Jadwal &amp; Hasil
-          </button>
-        </div>
-      </div>
-    </section>
-  );
+	return (
+		<section id="home" className="nx-hero">
+			<HexField />
+			<div className="nx-hero-scan" aria-hidden="true" />
+			<div className={`nx-hero-content ${revealed ? "is-revealed" : ""}`}>
+				<div className="nx-eyebrow">
+					<Radio size={13} className="nx-eyebrow-dot" />
+				TURNAMEN E-SPORTS &middot; {EVENT.tema}
+				</div>
+				<h1 className="nx-hero-title">
+					<span className="nx-title-line nx-title-slam-left">GOLDEN FLOWER</span>
+				</h1>
+				<div className="nx-hero-cta">
+					<button className="nx-btn nx-btn-primary" onClick={() => go("players")}>
+						<Users size={18} />
+						Lihat Peserta
+					</button>
+					<button className="nx-btn nx-btn-ghost" onClick={() => go("schedule")}>
+						<Calendar size={18} />
+						Jadwal &amp; Hasil
+					</button>
+				</div>
+			</div>
+		</section>
+	);
+}
+
+/* ------------------------------------------------------------------ */
+/*  TOURNAMENT BRACKET (Eliminasi - Visual Bracket Style)              */
+/* ------------------------------------------------------------------ */
+
+function TournamentBracket({ teams, totalTeams, matches, onUpdate, isAdmin }) {
+	const [activeMatch, setActiveMatch] = useState(null);
+	const [updating, setUpdating] = useState(false);
+
+	const API_BRACKET = "https://api.ipl-q.com/api/v1/web/BracketMLBB";
+
+	const getApiMatchByCode = (code) => {
+		if (!matches) return null;
+		return matches.find((m) => m.match_code === code);
+	};
+
+	const recordGame = async (matchId, gameNumber, winnerTeamId) => {
+		if (updating) return;
+		setUpdating(true);
+		try {
+		const response = await fetch(API_BRACKET, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ method: "UPDATE_SCORE", match_id: matchId, game_number: gameNumber, game_winner: winnerTeamId }),
+		});
+		if (response.ok) {
+			const data = await response.json();
+			if (data.error_code === "0") {
+			if (onUpdate) onUpdate();
+			setActiveMatch(null);
+			} else { alert(`❌ ${data.error_message}`); }
+		}
+		} catch (err) { alert(`❌ ${err.message}`); }
+		finally { setUpdating(false); }
+	};
+
+	const getTeamName = (id) => {
+		if (!id || id === 0) return "TBD";
+		const t = teams.find((tm) => tm.id === id);
+		return t ? t.name : `Tim ${id}`;
+	};
+
+	// Group matches by round
+	const matchesByRound = {};
+	if (matches) {
+		matches.forEach((m) => {
+			if (!matchesByRound[m.round]) matchesByRound[m.round] = [];
+			matchesByRound[m.round].push(m);
+		});
+		// Sort each round by match_order
+		Object.keys(matchesByRound).forEach((r) => {
+		matchesByRound[r].sort((a, b) => a.match_order - b.match_order);
+		});
+	}
+
+	const roundOrder = ["round1", "quarter", "semi", "final"];
+	const activeRounds = roundOrder.filter((r) => matchesByRound[r] && matchesByRound[r].length > 0);
+
+	const roundLabels = { round1: "Babak 1", quarter: "Perempat Final", semi: "Semifinal", final: "Final" };
+
+	const finalMatch = matchesByRound["final"] ? matchesByRound["final"][0] : null;
+	const champion = finalMatch && finalMatch.winner ? teams.find((t) => t.id === finalMatch.winner) : null;
+
+	if (activeRounds.length === 0) {
+		return <div style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}><p>Belum ada data pertandingan.</p></div>;
+	}
+
+	// Render a single match card
+	const renderMatch = (apiMatch, showConnector = true, isLast = false) => {
+		if (!apiMatch) return null;
+		const hasBothTeams = apiMatch.team_a > 0 && apiMatch.team_b > 0;
+		const isDone = apiMatch.status === "done";
+		const isClickable = isAdmin && hasBothTeams && !isDone;
+		const matchWinner = apiMatch.winner || 0;
+
+		return (
+		<div className="nx-tourney-match-wrapper" key={apiMatch.id}>
+			<div
+			className={`nx-tourney-match ${isClickable ? "is-clickable" : ""} ${isDone ? "is-done" : ""}`}
+			onClick={() => isClickable && setActiveMatch(apiMatch)}
+			>
+			<div className={`nx-tourney-slot nx-tourney-slot-top ${apiMatch.team_a === 0 ? "is-bye" : ""} ${matchWinner === apiMatch.team_a && matchWinner !== 0 ? "is-winner" : ""}`}>
+				<span className="nx-tourney-name">{apiMatch.team_a === 0 ? "TBD" : getTeamName(apiMatch.team_a)}</span>
+				<span className="nx-tourney-score">{hasBothTeams ? (isDone ? apiMatch.score_a : "—") : "—"}</span>
+			</div>
+			<div className={`nx-tourney-slot nx-tourney-slot-bot ${apiMatch.team_b === 0 ? "is-bye" : ""} ${matchWinner === apiMatch.team_b && matchWinner !== 0 ? "is-winner" : ""}`}>
+				<span className="nx-tourney-name">{apiMatch.team_b === 0 ? "TBD" : getTeamName(apiMatch.team_b)}</span>
+				<span className="nx-tourney-score">{hasBothTeams ? (isDone ? apiMatch.score_b : "—") : "—"}</span>
+			</div>
+			</div>
+			{showConnector && !isLast && <div className="nx-tourney-arm-right" />}
+		</div>
+		);
+	};
+
+	return (
+		<div className="nx-tourney">
+		<div className="nx-tourney-header">
+			{activeRounds.map((r) => (
+			<div className="nx-tourney-round-label" key={r}>{roundLabels[r]}</div>
+			))}
+			<div className="nx-tourney-round-label nx-tourney-champ-label">
+			<Trophy size={14} /> Champion
+			</div>
+		</div>
+
+		<div className="nx-tourney-bracket">
+			{activeRounds.map((roundKey, rIdx) => {
+			const roundMatches = matchesByRound[roundKey] || [];
+			const isLastRound = rIdx === activeRounds.length - 1;
+			return (
+				<div className="nx-tourney-round" key={roundKey}>
+				{roundMatches.map((apiMatch) => renderMatch(apiMatch, !isLastRound, isLastRound))}
+				</div>
+			);
+			})}
+
+			<div className="nx-tourney-round nx-tourney-champion-round">
+			<div className="nx-tourney-match-wrapper">
+				<div className="nx-tourney-champion">
+				<Crown size={22} style={{ color: "#FFC93C" }} />
+				<span className="nx-tourney-champion-text">{champion ? champion.name : "TBD"}</span>
+				</div>
+			</div>
+			</div>
+		</div>
+
+		{/* Score Input Modal */}
+		{activeMatch && (
+			<div className="nx-tourney-modal-overlay" onClick={() => setActiveMatch(null)}>
+			<div className="nx-tourney-modal" onClick={(e) => e.stopPropagation()}>
+				<div className="nx-tourney-modal-header">
+				<div>
+					<h4>{activeMatch.round === "final" ? "Grand Final" : activeMatch.match_code}</h4>
+					<span className="nx-league-bo3-badge" style={{ marginTop: "4px", display: "inline-block" }}>
+					{activeMatch.round === "final" ? "BEST OF 5" : "BEST OF 3"}
+					</span>
+				</div>
+				<button className="nx-tourney-modal-close" onClick={() => setActiveMatch(null)}><X size={18} /></button>
+				</div>
+				<div className="nx-tourney-modal-scoreboard">
+				<div className={`nx-tourney-modal-team ${activeMatch.winner === activeMatch.team_a ? "is-winner" : ""}`}>
+					<span className="nx-tourney-modal-name">{getTeamName(activeMatch.team_a)}</span>
+					<span className="nx-tourney-modal-score">{activeMatch.score_a}</span>
+				</div>
+				<span className="nx-tourney-modal-vs">VS</span>
+				<div className={`nx-tourney-modal-team ${activeMatch.winner === activeMatch.team_b ? "is-winner" : ""}`}>
+					<span className="nx-tourney-modal-name">{getTeamName(activeMatch.team_b)}</span>
+					<span className="nx-tourney-modal-score">{activeMatch.score_b}</span>
+				</div>
+				</div>
+				<div className="nx-tourney-modal-games">
+				{(() => {
+					const isFinal = activeMatch.round === "final";
+					const totalGames = isFinal ? 5 : 3;
+					const winThreshold = isFinal ? 3 : 2;
+					const gameWinners = [activeMatch.game1_winner, activeMatch.game2_winner, activeMatch.game3_winner, activeMatch.game4_winner || 0, activeMatch.game5_winner || 0];
+					return Array.from({ length: totalGames }, (_, i) => i + 1).map((gameNum) => {
+					const gameWinner = gameWinners[gameNum - 1];
+					const isPlayed = gameWinner && gameWinner !== 0;
+					const gamesPlayed = gameWinners.filter((g) => g && g !== 0).length;
+					const isCurrent = activeMatch.status !== "done" && gameNum === gamesPlayed + 1 && activeMatch.score_a < winThreshold && activeMatch.score_b < winThreshold;
+					const isSkipped = (activeMatch.score_a >= winThreshold || activeMatch.score_b >= winThreshold) && !isPlayed;
+					return (
+						<div className={`nx-league-game ${isPlayed ? "is-played" : ""} ${isCurrent ? "is-current" : ""} ${isSkipped ? "is-skipped" : ""}`} key={gameNum}>
+						<span className="nx-league-game-label">Game {gameNum}</span>
+						{isPlayed ? (
+							<span className="nx-league-game-winner">
+							<Crown size={10} /> {getTeamName(gameWinner)}
+							</span>
+						) : isSkipped ? (
+							<span className="nx-league-game-skip">—</span>
+						) : isCurrent ? (
+							<div className="nx-league-game-btns">
+							<button className="nx-league-game-btn" disabled={updating} onClick={() => recordGame(activeMatch.id, gameNum, activeMatch.team_a)}>{getTeamName(activeMatch.team_a)}</button>
+							<button className="nx-league-game-btn" disabled={updating} onClick={() => recordGame(activeMatch.id, gameNum, activeMatch.team_b)}>{getTeamName(activeMatch.team_b)}</button>
+							</div>
+						) : (
+							<span className="nx-league-game-pending">Menunggu</span>
+						)}
+						</div>
+					);
+					});
+				})()}
+				</div>
+				{activeMatch.status === "done" && (
+				<div className="nx-league-match-result" style={{ marginTop: "16px" }}>
+					<Trophy size={14} />
+					<span>Pemenang: <strong>{getTeamName(activeMatch.winner)}</strong></span>
+					<span className="nx-league-match-score-final">({activeMatch.score_a} - {activeMatch.score_b})</span>
+				</div>
+				)}
+			</div>
+			</div>
+		)}
+		</div>
+	);
 }
 
 /* ------------------------------------------------------------------ */
 /*  LEAGUE BRACKET (3 Teams Round-Robin)                               */
 /* ------------------------------------------------------------------ */
 
-function LeagueBracket({ teams }) {
-  // State: scores[matchId] = { scoreA: number, scoreB: number, games: [{winnerTeamId},...] }
-  const [matchData, setMatchData] = useState({});
+function LeagueBracket({ teams, matches, onUpdate, isAdmin }) {
+  const [updating, setUpdating] = useState(false);
 
-  // Generate all match pairs for round-robin (3 teams = 3 matches)
-  const matches = [];
-  for (let i = 0; i < teams.length; i++) {
-    for (let j = i + 1; j < teams.length; j++) {
-      matches.push({ id: `${i}-${j}`, teamA: teams[i], teamB: teams[j] });
+  const API_BRACKET = "https://api.ipl-q.com/api/v1/web/BracketMLBB";
+
+  // Map API matches to display format
+  const getTeamById = (id) => teams.find((t) => t.id === id);
+
+  const matchList = matches.map((m) => ({
+    ...m,
+    teamAData: getTeamById(m.team_a),
+    teamBData: getTeamById(m.team_b),
+    games: [m.game1_winner, m.game2_winner, m.game3_winner],
+    finished: m.status === "done",
+  }));
+
+  const recordGame = async (matchId, gameNumber, winnerTeamId) => {
+    if (updating) return;
+    setUpdating(true);
+    try {
+      const response = await fetch(API_BRACKET, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: "UPDATE_SCORE",
+          match_id: matchId,
+          game_number: gameNumber,
+          game_winner: winnerTeamId,
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.error_code === "0") {
+          onUpdate(); // Refresh data
+        } else {
+          alert(`❌ ${data.error_message}`);
+        }
+      }
+    } catch (err) {
+      alert(`❌ Gagal update skor: ${err.message}`);
+    } finally {
+      setUpdating(false);
     }
-  }
-
-  const initMatch = (matchId) => ({
-    scoreA: 0,
-    scoreB: 0,
-    games: [], // array of { winner: teamId }
-    finished: false,
-    winner: null,
-  });
-
-  const getMatchData = (matchId) => matchData[matchId] || initMatch(matchId);
-
-  const recordGame = (matchId, winnerTeamId, teamAId, teamBId) => {
-    setMatchData((prev) => {
-      const current = prev[matchId] || initMatch(matchId);
-      if (current.finished) return prev; // Already finished BO3
-
-      const newGames = [...current.games, { winner: winnerTeamId }];
-      const newScoreA = newGames.filter((g) => g.winner === teamAId).length;
-      const newScoreB = newGames.filter((g) => g.winner === teamBId).length;
-      const finished = newScoreA === 2 || newScoreB === 2;
-      const winner = finished ? (newScoreA === 2 ? teamAId : teamBId) : null;
-
-      return {
-        ...prev,
-        [matchId]: {
-          scoreA: newScoreA,
-          scoreB: newScoreB,
-          games: newGames,
-          finished,
-          winner,
-        },
-      };
-    });
   };
 
-  const resetMatch = (matchId) => {
-    setMatchData((prev) => {
-      const updated = { ...prev };
-      delete updated[matchId];
-      return updated;
-    });
-  };
-
-  // Calculate wins per team from finished matches
+  // Calculate wins per team
   const winsMap = {};
-  teams.forEach((t) => { winsMap[t.id] = 0; });
-  Object.values(matchData).forEach((md) => {
-    if (md.finished && md.winner && winsMap[md.winner] !== undefined) {
-      winsMap[md.winner] += 1;
-    }
-  });
-
-  // Calculate game wins/losses per team (for statistics)
   const gameWinsMap = {};
   const gameLossesMap = {};
-  teams.forEach((t) => { gameWinsMap[t.id] = 0; gameLossesMap[t.id] = 0; });
-  matches.forEach((match) => {
-    const md = matchData[match.id];
-    if (md) {
-      md.games.forEach((g) => {
-        if (g.winner === match.teamA.id) {
-          gameWinsMap[match.teamA.id] += 1;
-          gameLossesMap[match.teamB.id] += 1;
-        } else {
-          gameWinsMap[match.teamB.id] += 1;
-          gameLossesMap[match.teamA.id] += 1;
-        }
-      });
+  teams.forEach((t) => { winsMap[t.id] = 0; gameWinsMap[t.id] = 0; gameLossesMap[t.id] = 0; });
+
+  matchList.forEach((m) => {
+    if (m.finished && m.winner) {
+      winsMap[m.winner] = (winsMap[m.winner] || 0) + 1;
     }
+    m.games.forEach((g) => {
+      if (g && g !== 0) {
+        if (g === m.team_a) { gameWinsMap[m.team_a]++; gameLossesMap[m.team_b]++; }
+        else if (g === m.team_b) { gameWinsMap[m.team_b]++; gameLossesMap[m.team_a]++; }
+      }
+    });
   });
 
-  // Determine standings
-  const allMatchesPlayed = matches.every((m) => matchData[m.id]?.finished);
+  const allMatchesPlayed = matchList.every((m) => m.finished);
   const standings = teams
-    .map((t) => ({
-      ...t,
-      wins: winsMap[t.id] || 0,
-      gameWins: gameWinsMap[t.id] || 0,
-      gameLosses: gameLossesMap[t.id] || 0,
-    }))
+    .map((t) => ({ ...t, wins: winsMap[t.id] || 0, gameWins: gameWinsMap[t.id] || 0, gameLosses: gameLossesMap[t.id] || 0 }))
     .sort((a, b) => b.wins - a.wins || (b.gameWins - b.gameLosses) - (a.gameWins - a.gameLosses));
 
   const getRank = (wins) => {
@@ -403,64 +630,52 @@ function LeagueBracket({ teams }) {
 
   return (
     <div className="nx-league-wrap">
-      {/* Match Cards with BO3 */}
       <div className="nx-league-matches">
-        {matches.map((match, idx) => {
-          const md = getMatchData(match.id);
-          const currentGame = md.games.length + 1;
+        {matchList.map((match, idx) => {
+          const currentGame = match.games.filter((g) => g && g !== 0).length + 1;
           return (
-            <div className={`nx-league-match-card ${md.finished ? "is-finished" : ""}`} key={match.id}>
+            <div className={`nx-league-match-card ${match.finished ? "is-finished" : ""}`} key={match.id}>
               <div className="nx-league-match-header">
                 <div className="nx-league-match-label">Pertandingan {idx + 1}</div>
                 <span className="nx-league-bo3-badge">BO3</span>
               </div>
 
-              {/* Scoreboard */}
               <div className="nx-league-scoreboard">
-                <div className={`nx-league-score-team ${md.winner === match.teamA.id ? "is-winner" : ""}`}>
-                  <span className="nx-league-score-name">{match.teamA.name}</span>
-                  <span className="nx-league-score-num">{md.scoreA}</span>
+                <div className={`nx-league-score-team ${match.winner === match.team_a ? "is-winner" : ""}`}>
+                  <span className="nx-league-score-name">{match.teamAData?.name || `Tim ${match.team_a}`}</span>
+                  <span className="nx-league-score-num">{match.score_a}</span>
                 </div>
                 <div className="nx-league-score-divider">
-                  {md.finished ? <Crown size={16} style={{ color: "#FFC93C" }} /> : <span>—</span>}
+                  {match.finished ? <Crown size={16} style={{ color: "#FFC93C" }} /> : <span>—</span>}
                 </div>
-                <div className={`nx-league-score-team ${md.winner === match.teamB.id ? "is-winner" : ""}`}>
-                  <span className="nx-league-score-num">{md.scoreB}</span>
-                  <span className="nx-league-score-name">{match.teamB.name}</span>
+                <div className={`nx-league-score-team ${match.winner === match.team_b ? "is-winner" : ""}`}>
+                  <span className="nx-league-score-num">{match.score_b}</span>
+                  <span className="nx-league-score-name">{match.teamBData?.name || `Tim ${match.team_b}`}</span>
                 </div>
               </div>
 
-              {/* Game Details */}
               <div className="nx-league-games">
                 {[1, 2, 3].map((gameNum) => {
-                  const game = md.games[gameNum - 1];
-                  const isPlayed = !!game;
-                  const isCurrent = !md.finished && gameNum === currentGame;
-                  const isSkipped = md.finished && !isPlayed;
+                  const gameWinner = match.games[gameNum - 1];
+                  const isPlayed = gameWinner && gameWinner !== 0;
+                  const isCurrent = !match.finished && gameNum === currentGame;
+                  const isSkipped = match.finished && !isPlayed;
                   return (
                     <div className={`nx-league-game ${isPlayed ? "is-played" : ""} ${isCurrent ? "is-current" : ""} ${isSkipped ? "is-skipped" : ""}`} key={gameNum}>
                       <span className="nx-league-game-label">Game {gameNum}</span>
                       {isPlayed ? (
                         <span className="nx-league-game-winner">
-                          <Crown size={10} /> {game.winner === match.teamA.id ? match.teamA.name : match.teamB.name}
+                          <Crown size={10} /> {gameWinner === match.team_a ? (match.teamAData?.name || `Tim ${match.team_a}`) : (match.teamBData?.name || `Tim ${match.team_b}`)}
                         </span>
                       ) : isSkipped ? (
                         <span className="nx-league-game-skip">—</span>
-                      ) : isCurrent ? (
+                      ) : isCurrent && isAdmin ? (
                         <div className="nx-league-game-btns">
-                          <button
-                            className="nx-league-game-btn"
-                            onClick={() => recordGame(match.id, match.teamA.id, match.teamA.id, match.teamB.id)}
-                            title={`${match.teamA.name} menang game ${gameNum}`}
-                          >
-                            {match.teamA.name}
+                          <button className="nx-league-game-btn" disabled={updating} onClick={() => recordGame(match.id, gameNum, match.team_a)}>
+                            {match.teamAData?.name || `Tim ${match.team_a}`}
                           </button>
-                          <button
-                            className="nx-league-game-btn"
-                            onClick={() => recordGame(match.id, match.teamB.id, match.teamA.id, match.teamB.id)}
-                            title={`${match.teamB.name} menang game ${gameNum}`}
-                          >
-                            {match.teamB.name}
+                          <button className="nx-league-game-btn" disabled={updating} onClick={() => recordGame(match.id, gameNum, match.team_b)}>
+                            {match.teamBData?.name || `Tim ${match.team_b}`}
                           </button>
                         </div>
                       ) : (
@@ -471,27 +686,18 @@ function LeagueBracket({ teams }) {
                 })}
               </div>
 
-              {/* Match Result */}
-              {md.finished && (
+              {match.finished && (
                 <div className="nx-league-match-result">
                   <Trophy size={14} />
-                  <span>Pemenang: <strong>{md.winner === match.teamA.id ? match.teamA.name : match.teamB.name}</strong></span>
-                  <span className="nx-league-match-score-final">({md.scoreA} - {md.scoreB})</span>
+                  <span>Pemenang: <strong>{match.winner === match.team_a ? (match.teamAData?.name) : (match.teamBData?.name)}</strong></span>
+                  <span className="nx-league-match-score-final">({match.score_a} - {match.score_b})</span>
                 </div>
-              )}
-
-              {/* Reset button */}
-              {md.games.length > 0 && (
-                <button className="nx-league-reset-btn" onClick={() => resetMatch(match.id)}>
-                  Reset Pertandingan
-                </button>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* Standings Table */}
       <div className="nx-league-standings">
         <h4 style={{ textAlign: "center", marginBottom: "16px", color: "var(--primary)" }}>Klasemen & Statistik</h4>
         <table className="nx-league-table">
@@ -508,7 +714,6 @@ function LeagueBracket({ teams }) {
           <tbody>
             {standings.map((t, idx) => {
               const matchLosses = (teams.length - 1) - t.wins;
-              const finishedCount = matches.filter((m) => matchData[m.id]?.finished).length;
               const gameDiff = t.gameWins - t.gameLosses;
               const rankInfo = allMatchesPlayed ? getRank(t.wins) : null;
               return (
@@ -554,7 +759,7 @@ function LeagueBracket({ teams }) {
 /*  BRACKET (with Spin Wheel)                                          */
 /* ------------------------------------------------------------------ */
 
-function Bracket({ go }) {
+function Bracket({ go, isAdmin }) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -581,7 +786,9 @@ function Bracket({ go }) {
         if (data.error_code === "0") {
           const result = data.result || [];
           setPlayers(result);
-          setUnassigned([...result]);
+          // Pisahkan pemain yang sudah punya tim dan yang belum
+          const unassignedPlayers = result.filter((p) => !p.nomor_team || p.nomor_team === "0" || p.nomor_team === "");
+          setUnassigned(unassignedPlayers);
         } else {
           setError(data.error_message || "Gagal mengambil data");
         }
@@ -594,9 +801,24 @@ function Bracket({ go }) {
   useEffect(() => {
     if (players.length > 0 && teams.length === 0) {
       const totalTeams = Math.ceil(players.length / TEAM_SIZE);
-      const emptyTeams = [];
-      for (let i = 0; i < totalTeams; i++) emptyTeams.push({ id: i + 1, name: `Tim ${i + 1}`, members: [] });
-      setTeams(emptyTeams);
+      const initialTeams = [];
+      for (let i = 0; i < totalTeams; i++) {
+        initialTeams.push({ id: i + 1, name: `Tim ${i + 1}`, members: [] });
+      }
+      // Masukkan pemain yang sudah punya nomor_team ke tim masing-masing
+      players.forEach((p) => {
+        if (p.nomor_team && p.nomor_team !== "0" && p.nomor_team !== "") {
+          const tIdx = parseInt(p.nomor_team, 10) - 1;
+          if (tIdx >= 0 && tIdx < initialTeams.length) {
+            initialTeams[tIdx].members.push(p);
+          }
+        }
+      });
+      setTeams(initialTeams);
+
+      // Set currentTeamIdx ke tim pertama yang belum penuh
+      const firstAvailable = initialTeams.findIndex((t) => t.members.length < TEAM_SIZE);
+      if (firstAvailable >= 0) setCurrentTeamIdx(firstAvailable);
     }
   }, [players]);
 
@@ -708,13 +930,43 @@ function Bracket({ go }) {
       const data = await response.json();
 
       if (data.error_code === "0") {
-        setTeams((prev) => {
-          const updated = [...prev];
-          updated[targetIdx] = { ...updated[targetIdx], members: [...updated[targetIdx].members, selectedPlayer] };
-          setCurrentTeamIdx((targetIdx + 1) % updated.length);
-          return updated;
+        const refetchResponse = await fetch("https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ method: "SELECT" }),
         });
-        setUnassigned((prev) => prev.filter((p) => p.id !== selectedPlayer.id));
+        if (refetchResponse.ok) {
+			const refetchData = await refetchResponse.json();
+			if (refetchData.error_code === "0") {
+				const result = refetchData.result || [];
+				setPlayers(result);
+
+				const totalTeamsCount = Math.ceil(result.length / TEAM_SIZE);
+				const updatedTeams = [];
+				for (let i = 0; i < totalTeamsCount; i++) {
+					updatedTeams.push({ id: i + 1, name: `Tim ${i + 1}`, members: [] });
+				}
+				result.forEach((p) => {
+					if (p.nomor_team) {
+						const tIdx = parseInt(p.nomor_team, 10) - 1;
+						if (tIdx >= 0 && tIdx < updatedTeams.length) {
+							updatedTeams[tIdx].members.push(p);
+						}
+					}
+				});
+				setTeams(updatedTeams);
+
+				const unassignedPlayers = result.filter((p) => !p.nomor_team || p.nomor_team === "0" || p.nomor_team === "");
+				setUnassigned(unassignedPlayers);
+
+				let nextIdx = (targetIdx + 1) % updatedTeams.length;
+				for (let i = 0; i < updatedTeams.length; i++) {
+					const checkIdx = (targetIdx + 1 + i) % updatedTeams.length;
+					if (updatedTeams[checkIdx].members.length < TEAM_SIZE) { nextIdx = checkIdx; break; }
+				}
+				setCurrentTeamIdx(nextIdx);
+			}
+        }
         setSelectedPlayer(null);
       } else {
         alert(`❌ Gagal memasukkan ke tim!\n\n${data.error_message}`);
@@ -739,41 +991,14 @@ function Bracket({ go }) {
 
   const totalPlayers = players.length;
   const totalTeams = Math.ceil(totalPlayers / TEAM_SIZE);
-  const allAssigned = unassigned.length === 0 && players.length > 0;
-  const bracketSize = totalTeams <= 1 ? 2 : Math.pow(2, Math.ceil(Math.log2(totalTeams)));
-
-  const generateRounds = () => {
-    const rounds = [];
-    let currentSlots = bracketSize;
-    let roundIndex = 0;
-    while (currentSlots >= 2) {
-      const matchCount = currentSlots / 2;
-      const matches = [];
-      for (let i = 0; i < matchCount; i++) {
-        if (roundIndex === 0) {
-          const teamA = teams[i * 2] || null;
-          const teamB = teams[i * 2 + 1] || null;
-          matches.push({ teamA, teamB });
-        } else { matches.push({ teamA: null, teamB: null }); }
-      }
-      let roundLabel;
-      if (currentSlots === 2) roundLabel = "Grand Final";
-      else if (currentSlots === 4) roundLabel = "Semifinal";
-      else if (currentSlots === 8) roundLabel = "Perempat Final";
-      else roundLabel = `Babak ${roundIndex + 1}`;
-      rounds.push({ label: roundLabel, matches });
-      currentSlots = currentSlots / 2;
-      roundIndex++;
-    }
-    return rounds;
-  };
+  const allAssigned = unassigned.length === 0 && players.length > 0 && teams.length > 0;
 
   return (
     <section id="bracket" className="nx-page">
       <HexField dense />
       <div className="nx-page-inner" style={{ paddingTop: "60px" }}>
         <div className="nx-section-head" style={{ textAlign: "center" }}>
-          <span className="nx-section-eyebrow">{totalTeams === 3 ? "Format Liga Round Robin" : "Format Eliminasi Tunggal"}</span>
+          <span className="nx-section-eyebrow">Pengundian Tim</span>
           <h1>Bagan Turnamen</h1>
         </div>
         {loading ? (
@@ -795,9 +1020,8 @@ function Bracket({ go }) {
               <span className="nx-chip"><Check size={14} /> {totalPlayers - unassigned.length} Sudah Ditempatkan</span>
             </div>
 
-            {/* SPIN WHEEL + SUSUNAN TIM (SIDE BY SIDE) */}
-            <div className="nx-spin-layout">
-              {!allAssigned && (
+            <div className={`nx-spin-layout ${!isAdmin ? "is-viewer" : ""}`}>
+              {!allAssigned && isAdmin && (
                 <div className="nx-spin-section">
                   <h3 style={{ textAlign: "center", marginBottom: "8px" }}>Putar Roda untuk Menentukan Tim</h3>
                   <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "13px", marginBottom: "24px" }}>
@@ -844,41 +1068,613 @@ function Bracket({ go }) {
               </div>
             </div>
 
-            {/* BAGAN PERTANDINGAN - selalu tampil */}
-            <div style={{ marginTop: "50px", borderTop: "1px solid var(--line)", paddingTop: "30px" }}>
-              <h3 style={{ textAlign: "center", marginBottom: "20px" }}>
-                {totalTeams === 3 ? "Format Liga (Round Robin)" : "Bagan Pertandingan"}
-              </h3>
-              {totalTeams === 3 && (
-                <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "13px", marginBottom: "24px" }}>
-                  Semua tim saling bertemu dengan format <strong style={{ color: "var(--primary)" }}>Best of 3 (BO3)</strong>. Penentuan juara berdasarkan jumlah kemenangan match:<br />
-                  🥇 2x Menang = Juara 1 &nbsp;|&nbsp; 🥈 1x Menang = Juara 2 &nbsp;|&nbsp; 🥉 0x Menang = Juara 3
-                </p>
-              )}
+            {allAssigned && isAdmin && (
+              <BracketDraw teams={teams} go={go} />
+            )}
+          </>
+        )}
+      	</div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  BRACKET DRAW (Pengundian Lawan)                                    */
+/* ------------------------------------------------------------------ */
+
+function BracketDraw({ teams, go }) {
+  const [shuffledTeams, setShuffledTeams] = useState([]);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [shuffleCount, setShuffleCount] = useState(0);
+  const [drawDone, setDrawDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [existingSeeds, setExistingSeeds] = useState([]);
+  const shuffleIntervalRef = useRef(null);
+
+  const API_URL = "https://api.ipl-q.com/api/v1/web/BracketMLBB";
+
+  const totalTeams = teams.length;
+  const isLeague = totalTeams === 3;
+
+  // Cek apakah sudah ada data seed tersimpan
+  useEffect(() => {
+    const fetchSeeds = async () => {
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ method: "SELECT_SEEDS" }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.error_code === "0" && data.seeds && data.seeds.length > 0) {
+            setExistingSeeds(data.seeds);
+            // Susun ulang tim sesuai seed
+            const ordered = data.seeds
+              .sort((a, b) => a.seed_position - b.seed_position)
+              .map((s) => teams.find((t) => t.id === s.nomor_team))
+              .filter(Boolean);
+            if (ordered.length > 0 && ordered.length === teams.length) {
+              setShuffledTeams(ordered);
+              setDrawDone(true);
+              setSaved(true);
+            }
+          }
+        }
+      } catch (err) { /* ignore - API mungkin belum ready */ }
+    };
+    if (teams.length > 1) fetchSeeds();
+  }, [teams]);
+
+  // Shuffle function (Fisher-Yates)
+  const shuffleArray = (arr) => {
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  const startShuffle = () => {
+    setIsShuffling(true);
+    setDrawDone(false);
+    setSaved(false);
+    setShuffleCount(0);
+
+    let count = 0;
+    const maxShuffles = 20;
+    const baseSpeed = 80;
+
+    const doShuffle = () => {
+      count++;
+      setShuffledTeams(shuffleArray(teams));
+      setShuffleCount(count);
+
+      if (count < maxShuffles) {
+        const delay = baseSpeed + (count > 14 ? (count - 14) * 80 : 0);
+        shuffleIntervalRef.current = setTimeout(doShuffle, delay);
+      } else {
+        setIsShuffling(false);
+        setDrawDone(true);
+      }
+    };
+
+    doShuffle();
+  };
+
+  const saveToAPI = async () => {
+    if (shuffledTeams.length === 0) return;
+    setSaving(true);
+
+    try {
+      // 1. Simpan seed
+      const seeds = shuffledTeams.map((t, idx) => ({
+        nomor_team: String(t.id),
+        seed_position: idx + 1,
+      }));
+
+      const seedResponse = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "SAVE_SEEDS", seeds }),
+      });
+
+      if (!seedResponse.ok) throw new Error("Gagal menyimpan seed");
+      const seedData = await seedResponse.json();
+      if (seedData.error_code !== "0") throw new Error(seedData.error_message || "Gagal menyimpan seed");
+
+      // 2. Generate dan simpan match untuk semua round
+      if (isLeague) {
+        // Liga: simpan semua pasangan round robin
+        const matchPairs = getMatchPairs();
+        for (let i = 0; i < matchPairs.length; i++) {
+          const pair = matchPairs[i];
+          const matchPayload = {
+            method: "SAVE_MATCH",
+            match_code: `LIGA-${i + 1}`,
+            round: "league",
+            team_a: pair.teamA ? pair.teamA.id : 0,
+            team_b: pair.teamB ? pair.teamB.id : 0,
+            match_order: i + 1,
+          };
+          const matchResponse = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(matchPayload),
+          });
+          if (!matchResponse.ok) throw new Error(`Gagal menyimpan match LIGA-${i + 1}`);
+        }
+      } else {
+        // Eliminasi: generate bracket sesuai jumlah tim
+        // Tim yang BYE langsung masuk round lebih tinggi tanpa bertanding
+        const bracketSize = Math.pow(2, Math.ceil(Math.log2(totalTeams)));
+        const numByes = bracketSize - totalTeams;
+        
+        // Atur seeding: tim awal mendapat BYE, tim akhir bertanding round 1
+        const byeTeams = shuffledTeams.slice(0, numByes);
+        const playingTeams = shuffledTeams.slice(numByes);
+
+        // Susun semua rounds dan match codes dulu
+        // Round 2 slots: [bye1, bye2, ..., TBD, TBD, ...]
+        const round2Size = bracketSize / 2;
+        const round2Slots = [];
+        let byeIdx = 0;
+        for (let i = 0; i < round2Size; i++) {
+          if (byeIdx < byeTeams.length) {
+            round2Slots.push(byeTeams[byeIdx].id);
+            byeIdx++;
+          } else {
+            round2Slots.push(0);
+          }
+        }
+
+        // Generate all match codes per round
+        const allRounds = []; // [{roundName, matches: [{code, teamA, teamB, order, nextMatchCode, nextSlot}]}]
+        
+        // Round 1 (hanya match yang ada tim)
+        const round1RoundName = bracketSize === 4 ? "semi" : bracketSize === 8 ? "quarter" : "round1";
+        const round1Matches = [];
+        let r1Order = 0;
+        for (let i = 0; i < playingTeams.length; i += 2) {
+          r1Order++;
+          let code;
+          if (round1RoundName === "semi") code = `SF-${r1Order}`;
+          else if (round1RoundName === "quarter") code = `QF-${r1Order}`;
+          else code = `R1-${r1Order}`;
+          round1Matches.push({ code, teamA: playingTeams[i]?.id || 0, teamB: playingTeams[i + 1]?.id || 0, order: r1Order });
+        }
+
+        // Round 2+: generate matches from round2Slots
+        const laterRounds = [];
+        let currentSlots = round2Slots;
+        while (currentSlots.length >= 2) {
+          const matchCount = currentSlots.length / 2;
+          let roundName;
+          if (currentSlots.length === 2) roundName = "final";
+          else if (currentSlots.length === 4) roundName = "semi";
+          else roundName = "quarter";
+
+          const roundMatches = [];
+          const nextSlots = [];
+          let order = 0;
+          for (let i = 0; i < matchCount; i++) {
+            order++;
+            let code;
+            if (roundName === "final") code = "GF";
+            else if (roundName === "semi") code = `SF-${order}`;
+            else code = `QF-${order}`;
+            roundMatches.push({ code, teamA: currentSlots[i * 2] || 0, teamB: currentSlots[i * 2 + 1] || 0, order });
+            nextSlots.push(0);
+          }
+          laterRounds.push({ roundName, matches: roundMatches });
+          currentSlots = nextSlots;
+        }
+
+        // Tentukan next_match_code untuk round 1 matches
+        // Round 1 winners masuk ke posisi TBD (0) di round2Slots
+        // Cari posisi TBD di round2Slots dan mapping ke match di round 2
+        const tdbPositions = []; // index di round2Slots yang nilainya 0
+        for (let i = 0; i < round2Slots.length; i++) {
+          if (round2Slots[i] === 0) tdbPositions.push(i);
+        }
+
+        // Setiap round1 match (urutan ke-n) feed ke tdbPositions[n]
+        for (let i = 0; i < round1Matches.length; i++) {
+          if (i < tdbPositions.length && laterRounds.length > 0) {
+            const tdbPos = tdbPositions[i];
+            const targetMatchIdx = Math.floor(tdbPos / 2); // match ke berapa di round 2
+            const targetSlot = tdbPos % 2 === 0 ? "a" : "b"; // slot a atau b
+            if (targetMatchIdx < laterRounds[0].matches.length) {
+              round1Matches[i].nextMatchCode = laterRounds[0].matches[targetMatchIdx].code;
+              round1Matches[i].nextSlot = targetSlot;
+            }
+          }
+        }
+
+        // Tentukan next_match_code untuk later rounds
+        for (let rIdx = 0; rIdx < laterRounds.length; rIdx++) {
+          const nextRound = rIdx < laterRounds.length - 1 ? laterRounds[rIdx + 1] : null;
+          for (let mIdx = 0; mIdx < laterRounds[rIdx].matches.length; mIdx++) {
+            if (nextRound) {
+              const nextMatchIdx = Math.floor(mIdx / 2);
+              if (nextMatchIdx < nextRound.matches.length) {
+                laterRounds[rIdx].matches[mIdx].nextMatchCode = nextRound.matches[nextMatchIdx].code;
+                laterRounds[rIdx].matches[mIdx].nextSlot = mIdx % 2 === 0 ? "a" : "b";
+              }
+            }
+          }
+        }
+
+        // Gabungkan semua rounds
+        allRounds.push({ roundName: round1RoundName, matches: round1Matches });
+        laterRounds.forEach((r) => allRounds.push(r));
+
+        // Simpan semua match ke API
+        for (let rIdx = 0; rIdx < allRounds.length; rIdx++) {
+          const round = allRounds[rIdx];
+          for (let mIdx = 0; mIdx < round.matches.length; mIdx++) {
+            const match = round.matches[mIdx];
+            const res = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                method: "SAVE_MATCH",
+                match_code: match.code,
+                round: round.roundName,
+                team_a: match.teamA,
+                team_b: match.teamB,
+                match_order: match.order,
+                next_match_code: match.nextMatchCode || "",
+                next_slot: match.nextSlot || "",
+              }),
+            });
+            if (!res.ok) throw new Error(`Gagal menyimpan match ${match.code}`);
+          }
+        }
+      }
+
+      setSaved(true);
+    } catch (err) {
+      alert(`❌ Gagal menyimpan!\n\n${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetDraw = async () => {
+    setShuffledTeams([]);
+    setDrawDone(false);
+    setSaved(false);
+    setShuffleCount(0);
+    setExistingSeeds([]);
+    if (shuffleIntervalRef.current) clearTimeout(shuffleIntervalRef.current);
+
+    // Reset di API juga
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "RESET" }),
+      });
+    } catch (err) { /* ignore */ }
+  };
+
+  // Generate match pairs from shuffled order
+  const getMatchPairs = () => {
+    if (shuffledTeams.length === 0) return [];
+    if (isLeague) {
+      const pairs = [];
+      for (let i = 0; i < shuffledTeams.length; i++) {
+        for (let j = i + 1; j < shuffledTeams.length; j++) {
+          pairs.push({ teamA: shuffledTeams[i], teamB: shuffledTeams[j] });
+        }
+      }
+      return pairs;
+    }
+    // Bracket eliminasi: pad ke power of 2, BYE di akhir
+    const bracketSize = Math.pow(2, Math.ceil(Math.log2(shuffledTeams.length)));
+    const padded = [...shuffledTeams];
+    while (padded.length < bracketSize) padded.push(null); // null = BYE
+    const pairs = [];
+    for (let i = 0; i < padded.length; i += 2) {
+      const tA = padded[i];
+      const tB = padded[i + 1] !== undefined ? padded[i + 1] : null;
+      // Skip double BYE
+      if (!tA && !tB) continue;
+      pairs.push({ teamA: tA, teamB: tB });
+    }
+    return pairs;
+  };
+
+  if (teams.length < 2) return null;
+
+  return (
+    <div className="nx-draw-section">
+      <div className="nx-draw-header">
+        <Swords size={20} style={{ color: "var(--primary)" }} />
+        <h3>Pengundian Lawan</h3>
+        <p style={{ color: "var(--muted)", fontSize: "13px", marginTop: "6px" }}>
+          {isLeague
+            ? "Acak urutan pertandingan liga (semua tim saling bertemu)"
+            : "Acak posisi tim di bracket untuk menentukan lawan"
+          }
+        </p>
+      </div>
+
+      {/* Shuffling Animation - Grid of team cards */}
+      <div className={`nx-draw-grid ${isShuffling ? "is-shuffling" : ""}`}>
+        {(shuffledTeams.length > 0 ? shuffledTeams : teams).filter(Boolean).map((t, idx) => {
+          const bracketSize = Math.pow(2, Math.ceil(Math.log2(totalTeams)));
+          const numByes = bracketSize - totalTeams;
+          const isByeTeam = drawDone && !isLeague && idx < numByes;
+          return (
+            <div
+              className={`nx-draw-team-card ${drawDone ? "is-final" : ""} ${isByeTeam ? "is-bye-card" : ""}`}
+              key={t.id}
+              style={{ animationDelay: drawDone ? `${idx * 0.1}s` : "0s" }}
+            >
+              <span className="nx-draw-team-seed">{idx + 1}</span>
+              <span className="nx-draw-team-name">{t.name}</span>
+              {isByeTeam && <span className="nx-draw-bye-badge">BYE</span>}
             </div>
-            {totalTeams === 3 ? (
-              <LeagueBracket teams={teams} />
-            ) : (
-              <div className="nx-bracket-container">
-                {generateRounds().map((round, rIdx) => (
-                  <div className="nx-bracket-round" key={rIdx}>
-                    <div className="nx-bracket-round-label">{round.label}</div>
-                    <div className="nx-bracket-matches">
-                      {round.matches.map((match, mIdx) => (
-                        <div className="nx-bracket-match" key={mIdx}>
-                          <div className={`nx-bracket-team ${match.teamA ? "" : "is-bye"}`}>
-                            <span className="nx-bracket-team-name">{match.teamA ? match.teamA.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
-                          </div>
-                          <div className="nx-bracket-vs">VS</div>
-                          <div className={`nx-bracket-team ${match.teamB ? "" : "is-bye"}`}>
-                            <span className="nx-bracket-team-name">{match.teamB ? match.teamB.name : (rIdx === 0 ? "BYE" : "TBD")}</span>
-                          </div>
-                        </div>
+          );
+        })}
+      </div>
+
+      {/* Match Pairs Result */}
+      {drawDone && !isLeague && (
+        <div className="nx-draw-results">
+          <h4 style={{ textAlign: "center", color: "var(--primary)", marginBottom: "16px" }}>
+            Hasil Pengundian Bracket
+          </h4>
+
+          {/* Tim yang mendapat BYE */}
+          {(() => {
+            const bracketSize = Math.pow(2, Math.ceil(Math.log2(shuffledTeams.length)));
+            const numByes = bracketSize - shuffledTeams.length;
+            const byeTeamsList = shuffledTeams.slice(0, numByes);
+            const playingTeamsList = shuffledTeams.slice(numByes);
+
+            return (
+              <>
+                {byeTeamsList.length > 0 && (
+                  <div style={{ marginBottom: "16px" }}>
+                    <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
+                      Langsung Maju (BYE) — {byeTeamsList.length} tim
+                    </p>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {byeTeamsList.map((t) => (
+                        <span key={t.id} className="nx-chip" style={{ borderColor: "rgba(0,255,163,0.3)", color: "#00FFA3" }}>
+                          <Crown size={12} /> {t.name}
+                        </span>
                       ))}
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Tim yang bertanding round pertama */}
+                <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
+                  Pertandingan Babak Pertama
+                </p>
+                <div className="nx-draw-pairs">
+                  {(() => {
+                    const pairs = [];
+                    for (let i = 0; i < playingTeamsList.length; i += 2) {
+                      pairs.push({ teamA: playingTeamsList[i], teamB: playingTeamsList[i + 1] || null });
+                    }
+                    return pairs.map((pair, idx) => (
+                      <div className="nx-draw-pair" key={idx}>
+                        <span className="nx-draw-pair-label">Match {idx + 1}</span>
+                        <div className="nx-draw-pair-teams">
+                          <span className="nx-draw-pair-team">{pair.teamA ? pair.teamA.name : "TBD"}</span>
+                          <span className="nx-draw-pair-vs">VS</span>
+                          <span className="nx-draw-pair-team">{pair.teamB ? pair.teamB.name : "TBD"}</span>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Liga format - tampilkan semua match */}
+      {drawDone && isLeague && (
+        <div className="nx-draw-results">
+          <h4 style={{ textAlign: "center", color: "var(--primary)", marginBottom: "16px" }}>
+            Urutan Pertandingan
+          </h4>
+          <div className="nx-draw-pairs">
+            {getMatchPairs().map((pair, idx) => (
+              <div className="nx-draw-pair" key={idx}>
+                <span className="nx-draw-pair-label">Match {idx + 1}</span>
+                <div className="nx-draw-pair-teams">
+                  <span className="nx-draw-pair-team">{pair.teamA ? pair.teamA.name : "TBD"}</span>
+                  <span className="nx-draw-pair-vs">VS</span>
+                  <span className="nx-draw-pair-team">{pair.teamB ? pair.teamB.name : "TBD"}</span>
+                </div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Controls */}
+      <div className="nx-draw-controls">
+        {!drawDone ? (
+          <button
+            className="nx-btn nx-btn-primary"
+            onClick={startShuffle}
+            disabled={isShuffling}
+          >
+            {isShuffling ? `Mengacak... (${shuffleCount})` : "Acak Lawan"}
+            <Zap size={16} />
+          </button>
+        ) : (
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+            {!saved ? (
+              <>
+                <button className="nx-btn nx-btn-ghost" onClick={resetDraw}>
+                  Acak Ulang
+                </button>
+                <button className="nx-btn nx-btn-primary" onClick={saveToAPI} disabled={saving}>
+                  {saving ? "Menyimpan..." : "Simpan & Lanjutkan"}
+                  <Check size={16} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="nx-btn nx-btn-ghost" onClick={resetDraw}>
+                  Reset & Acak Ulang
+                </button>
+                <button className="nx-btn nx-btn-primary" onClick={() => go("matches")}>
+                  <Swords size={16} /> Lihat Bracket Pertandingan
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {saved && (
+        <p style={{ textAlign: "center", color: "#00FFA3", fontSize: "13px", marginTop: "12px" }}>
+          ✓ Data bracket berhasil disimpan
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  MATCHES (Bracket Pertandingan - Halaman Sendiri)                   */
+/* ------------------------------------------------------------------ */
+
+function Matches({ isAdmin }) {
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [teams, setTeams] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [seeds, setSeeds] = useState([]);
+  const TEAM_SIZE = 5;
+
+  const API_REGISTER = "https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB";
+  const API_BRACKET = "https://api.ipl-q.com/api/v1/web/BracketMLBB";
+
+  const fetchData = async () => {
+    try {
+      // Fetch players + seeds + matches in parallel
+      const [playersRes, seedsRes, matchesRes] = await Promise.all([
+        fetch(API_REGISTER, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: "SELECT" }) }),
+        fetch(API_BRACKET, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: "SELECT_SEEDS" }) }),
+        fetch(API_BRACKET, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: "SELECT_MATCHES" }) }),
+      ]);
+
+      // Process players
+      if (playersRes.ok) {
+        const playersData = await playersRes.json();
+        if (playersData.error_code === "0") {
+          const result = playersData.result || [];
+          setPlayers(result);
+          const teamMap = {};
+          result.forEach((p) => {
+            if (p.nomor_team && p.nomor_team !== "0" && p.nomor_team !== "") {
+              const tNum = parseInt(p.nomor_team, 10);
+              if (tNum > 0) {
+                if (!teamMap[tNum]) teamMap[tNum] = { id: tNum, name: `Tim ${tNum}`, members: [] };
+                teamMap[tNum].members.push(p);
+              }
+            }
+          });
+          setTeams(Object.values(teamMap).sort((a, b) => a.id - b.id));
+        }
+      }
+
+      // Process seeds
+      if (seedsRes.ok) {
+        const seedsData = await seedsRes.json();
+        if (seedsData.error_code === "0" && seedsData.seeds) {
+          setSeeds(seedsData.seeds);
+        }
+      }
+
+      // Process matches
+      if (matchesRes.ok) {
+        const matchesData = await matchesRes.json();
+        if (matchesData.error_code === "0" && matchesData.matches) {
+          setMatches(matchesData.matches);
+        }
+      }
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const totalTeams = teams.length;
+  const hasMatches = matches.length > 0;
+
+  // Sort teams by seed position if seeds exist
+  const getSeededTeams = () => {
+    if (seeds.length === 0) return teams;
+    return seeds
+      .sort((a, b) => a.seed_position - b.seed_position)
+      .map((s) => teams.find((t) => t.id === s.nomor_team))
+      .filter(Boolean);
+  };
+
+  return (
+    <section id="matches" className="nx-page">
+      <HexField dense />
+      <div className="nx-page-inner" style={{ paddingTop: "60px" }}>
+        <div className="nx-section-head" style={{ textAlign: "center" }}>
+          <span className="nx-section-eyebrow">
+            {totalTeams === 3 ? "Format Liga Round Robin • BO3" : "Format Eliminasi Tunggal"}
+          </span>
+          <h1>Bracket Pertandingan</h1>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}><p>Memuat data...</p></div>
+        ) : error ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "#FF4D4D" }}><p>{error}</p></div>
+        ) : totalTeams < 2 ? (
+          <div style={{ padding: "60px 20px", background: "var(--bg-panel)", borderRadius: "var(--radius)", border: "1px dashed var(--line)", marginTop: "40px", maxWidth: "600px", marginLeft: "auto", marginRight: "auto", textAlign: "center" }}>
+            <Lock size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px", opacity: 0.5 }} />
+            <h2 style={{ marginBottom: "10px" }}>Belum Ada Tim</h2>
+            <p className="nx-section-desc">Bracket pertandingan akan ditampilkan setelah proses pengundian tim selesai.</p>
+          </div>
+        ) : !hasMatches ? (
+          <div style={{ padding: "60px 20px", background: "var(--bg-panel)", borderRadius: "var(--radius)", border: "1px dashed var(--line)", marginTop: "40px", maxWidth: "600px", marginLeft: "auto", marginRight: "auto", textAlign: "center" }}>
+            <Swords size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px", opacity: 0.5 }} />
+            <h2 style={{ marginBottom: "10px" }}>Menunggu Pengundian</h2>
+            <p className="nx-section-desc">Bracket pertandingan akan ditampilkan setelah proses pengundian lawan selesai di halaman Bagan Turnamen.</p>
+          </div>
+        ) : (
+          <>
+            <div className="nx-bracket-info">
+              <span className="nx-chip"><Users size={14} /> {players.length} Peserta</span>
+              <span className="nx-chip"><Swords size={14} /> {totalTeams} Tim</span>
+              <span className="nx-chip"><Trophy size={14} /> {totalTeams === 3 ? "Round Robin BO3" : "Eliminasi"}</span>
+            </div>
+
+            {totalTeams === 3 && (
+              <div style={{ textAlign: "center", marginTop: "20px" }}>
+                <p style={{ color: "var(--muted)", fontSize: "13px" }}>
+                  Semua tim saling bertemu dengan format <strong style={{ color: "var(--primary)" }}>Best of 3 (BO3)</strong>. Penentuan juara berdasarkan jumlah kemenangan match:<br />
+                  🥇 2x Menang = Juara 1 &nbsp;|&nbsp; 🥈 1x Menang = Juara 2 &nbsp;|&nbsp; 🥉 0x Menang = Juara 3
+                </p>
+              </div>
+            )}
+
+            {totalTeams === 3 ? (
+              <LeagueBracket teams={teams} matches={matches} onUpdate={fetchData} isAdmin={isAdmin} />
+            ) : (
+              <TournamentBracket teams={getSeededTeams()} totalTeams={totalTeams} matches={matches} onUpdate={fetchData} isAdmin={isAdmin} />
             )}
           </>
         )}
@@ -978,144 +1774,249 @@ function Players() {
 /*  REGISTER                                                          */
 /* ------------------------------------------------------------------ */
 
-function Register() {
-  const [status, setStatus] = useState("idle");
-  const [nama, setNama] = useState("");
-  const [noHp, setNoHp] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [gameId, setGameId] = useState("");
-  const [server, setServer] = useState("");
-  const [clusterRumah, setClusterRumah] = useState("");
-  const [blokRumah, setBlokRumah] = useState("");
-  const [nomorRumah, setNomorRumah] = useState("");
+function Register({ registrationOpen }) {
+	const [status, setStatus] = useState("idle");
+	const [nama, setNama] = useState("");
+	const [noHp, setNoHp] = useState("");
+	const [nickname, setNickname] = useState("");
+	const [gameId, setGameId] = useState("");
+	const [server, setServer] = useState("");
+	const [clusterRumah, setClusterRumah] = useState("");
+	const [blokRumah, setBlokRumah] = useState("");
+	const [nomorRumah, setNomorRumah] = useState("");
 
-  const handleSubmit = async () => {
-    if (!nama.trim()) { alert("❌ Form tidak lengkap!\n\nNama wajib diisi"); return; }
-    if (!noHp.trim()) { alert("❌ Form tidak lengkap!\n\nNomor WA wajib diisi"); return; }
-    if (!nickname.trim()) { alert("❌ Form tidak lengkap!\n\nNickname Akun wajib diisi"); return; }
-    if (!gameId.toString().trim()) { alert("❌ Form tidak lengkap!\n\nID Game wajib diisi"); return; }
-    if (!server.toString().trim()) { alert("❌ Form tidak lengkap!\n\nServer Game wajib diisi"); return; }
-    if (!clusterRumah.trim()) { alert("❌ Form tidak lengkap!\n\nCluster Rumah wajib dipilih"); return; }
-    if (!blokRumah.trim()) { alert("❌ Form tidak lengkap!\n\nBlok Rumah wajib diisi"); return; }
-    if (!nomorRumah.trim()) { alert("❌ Form tidak lengkap!\n\nNomor Rumah wajib diisi"); return; }
+	if (!registrationOpen) {
+		return (
+			<section id="register" className="nx-page">
+				<HexField dense />
+				<div className="nx-page-inner" style={{ textAlign: "center", paddingTop: "80px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+					<Lock size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px", opacity: 0.5 }} />
+					<h2>Pendaftaran Ditutup</h2>
+					<p className="nx-section-desc" style={{ textAlign: "center", marginTop: "12px", alignSelf: "center" }}>
+						Pendaftaran peserta untuk Turnamen E-Sports Cluster Golden Flower telah ditutup.<br />
+						Terima kasih atas antusiasme seluruh peserta!
+					</p>
+					<div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap", marginTop: "30px" }}>
+						<span className="nx-chip"><Calendar size={14} /> 8 - 9 Agustus 2026</span>
+						<span className="nx-chip"><MapPin size={14} /> Sport Club Golden Flower</span>
+					</div>
+				</div>
+			</section>
+		);
+	}
 
-    setStatus("submitting");
-    try {
-      const payload = {
-        method: "INSERT",
-        nama: nama.trim(),
-        nomor_wa: noHp.trim(),
-        nickname: nickname.trim(),
-        game_id: gameId.trim(),
-        game_server: server.trim(),
-        cluster_rumah: clusterRumah.trim(),
-        blok_rumah: blokRumah.trim(),
-        nomor_rumah: nomorRumah.trim(),
-      };
-      const response = await fetch("https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => null);
-        throw new Error(errData?.responsemessage || `Request gagal dengan status ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.error_code === "0" || data.errorcode === 0) {
-        setStatus("success");
-      } else if (data.error_code === "1" || data.errorcode === 1) {
-        setStatus("idle");
-        alert(`❌ ${data.error_message || data.errormessage || "Pendaftaran gagal"}`);
-      } else {
-        setStatus("idle");
-        alert(`❌ ${data.error_message || data.responsemessage || "Pendaftaran gagal"}`);
-      }
-    } catch (err) {
-      setStatus("idle");
-      const isNetworkError = err.message === "Failed to fetch" || err.name === "TypeError";
-      if (isNetworkError) {
-        alert(`❌ Pendaftaran Gagal!\n\nTidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.\n\nJika masalah berlanjut, coba nonaktifkan ad-blocker atau gunakan jaringan lain.`);
-      } else {
-        alert(`❌ Pendaftaran Gagal!\n\n${err.message}\n\nSilakan coba lagi.`);
-      }
-    }
-  };
+	const handleSubmit = async () => {
+		if (!nama.trim()) { alert("❌ Form tidak lengkap!\n\nNama wajib diisi"); return; }
+		if (!noHp.trim()) { alert("❌ Form tidak lengkap!\n\nNomor WA wajib diisi"); return; }
+		if (!nickname.trim()) { alert("❌ Form tidak lengkap!\n\nNickname Akun wajib diisi"); return; }
+		if (!gameId.toString().trim()) { alert("❌ Form tidak lengkap!\n\nID Game wajib diisi"); return; }
+		if (!server.toString().trim()) { alert("❌ Form tidak lengkap!\n\nServer Game wajib diisi"); return; }
+		if (!clusterRumah.trim()) { alert("❌ Form tidak lengkap!\n\nCluster Rumah wajib dipilih"); return; }
+		if (!blokRumah.trim()) { alert("❌ Form tidak lengkap!\n\nBlok Rumah wajib diisi"); return; }
+		if (!nomorRumah.trim()) { alert("❌ Form tidak lengkap!\n\nNomor Rumah wajib diisi"); return; }
 
-  if (status === "success") {
-    return (
-      <section id="register" className="nx-page">
-        <HexField dense />
-        <div className="nx-page-inner" style={{ textAlign: "center", paddingTop: "80px" }}>
-          <Trophy size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px" }} />
-          <h2>Pendaftaran Berhasil!</h2>
-          <button className="nx-btn nx-btn-primary" style={{ marginTop: "30px" }} onClick={() => {
-            setStatus("idle"); setNama(""); setNoHp(""); setNickname(""); setGameId(""); setServer(""); setClusterRumah(""); setBlokRumah(""); setNomorRumah("");
-          }}>Daftar Peserta Lain</button>
-        </div>
-      </section>
-    );
-  }
+		setStatus("submitting");
+		try {
+			const payload = {
+				method: "INSERT",
+				nama: nama.trim(),
+				nomor_wa: noHp.trim(),
+				nickname: nickname.trim(),
+				game_id: gameId.trim(),
+				game_server: server.trim(),
+				cluster_rumah: clusterRumah.trim(),
+				blok_rumah: blokRumah.trim(),
+				nomor_rumah: nomorRumah.trim(),
+			};
+			const response = await fetch("https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
+			if (!response.ok) {
+				const errData = await response.json().catch(() => null);
+				throw new Error(errData?.responsemessage || `Request gagal dengan status ${response.status}`);
+			}
+			const data = await response.json();
+			if (data.error_code === "0" || data.errorcode === 0) {
+				setStatus("success");
+			} else if (data.error_code === "1" || data.errorcode === 1) {
+				setStatus("idle");
+				alert(`❌ ${data.error_message || data.errormessage || "Pendaftaran gagal"}`);
+			} else {
+				setStatus("idle");
+				alert(`❌ ${data.error_message || data.responsemessage || "Pendaftaran gagal"}`);
+			}
+		} catch (err) {
+			setStatus("idle");
+			const isNetworkError = err.message === "Failed to fetch" || err.name === "TypeError";
+			if (isNetworkError) {
+				alert(`❌ Pendaftaran Gagal!\n\nTidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil dan coba lagi.\n\nJika masalah berlanjut, coba nonaktifkan ad-blocker atau gunakan jaringan lain.`);
+			} else {
+				alert(`❌ Pendaftaran Gagal!\n\n${err.message}\n\nSilakan coba lagi.`);
+			}
+		}
+	};
+
+	if (status === "success") {
+		return (
+			<section id="register" className="nx-page">
+				<HexField dense />
+				<div className="nx-page-inner" style={{ textAlign: "center", paddingTop: "80px" }}>
+					<Trophy size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px" }} />
+					<h2>Pendaftaran Berhasil!</h2>
+					<button className="nx-btn nx-btn-primary" style={{ marginTop: "30px" }} onClick={() => {
+						setStatus("idle"); setNama(""); setNoHp(""); setNickname(""); setGameId(""); setServer(""); setClusterRumah(""); setBlokRumah(""); setNomorRumah("");
+					}}>Daftar Peserta Lain</button>
+				</div>
+			</section>
+		);
+	}
 
 	return (
 		<section id="register" className="nx-page">
 			<HexField dense />
 			<div className="nx-page-inner">
 				<div className="nx-section-head">
-				<span className="nx-section-eyebrow">Pendaftaran Peserta</span>
-				<h1>Daftarkan Diri Anda</h1>
+					<span className="nx-section-eyebrow">Pendaftaran Peserta</span>
+					<h1>Daftarkan Diri Anda</h1>
 				</div>
 				<div className="nx-form">
-				<div className="nx-form-divider">Data Peserta</div>
-				<div className="nx-form-group">
-					<label>Nama</label>
-					<input id="namaInput" type="text" className="nx-input" placeholder="Masukkan nama lengkap Anda" value={nama} onChange={(e) => setNama(e.target.value)} />
-				</div>
-				<div className="nx-form-group">
-					<label>Nomor WA Aktif</label>
-					<input id="hpInput" type="text" className="nx-input" placeholder="Contoh: 081234567890" value={noHp} onChange={(e) => setNoHp(e.target.value)} />
-				</div>
-				<div className="nx-form-group">
-					<label>Nickname Akun Game</label>
-					<input id="nicknameInput" type="text" className="nx-input" placeholder="Masukkan nickname akun game Anda" value={nickname} onChange={(e) => setNickname(e.target.value)} />
-				</div>
-				<div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+					<div className="nx-form-divider">Data Peserta</div>
 					<div className="nx-form-group">
-					<label>ID Game</label>
-					<input id="gameIdInput" type="number" className="nx-input" placeholder="Masukkan ID game" value={gameId} onChange={(e) => setGameId(e.target.value)} />
+						<label>Nama</label>
+						<input id="namaInput" type="text" className="nx-input" placeholder="Masukkan nama lengkap Anda" value={nama} onChange={(e) => setNama(e.target.value)} />
 					</div>
 					<div className="nx-form-group">
-					<label>Server Game</label>
-					<input id="serverInput" type="number" className="nx-input" placeholder="Masukkan nomor server" value={server} onChange={(e) => setServer(e.target.value)} />
-					</div>
-				</div>
-				<div className="nx-form-group">
-					<label>Cluster Rumah</label>
-					<select id="clusterInput" className="nx-input" value={clusterRumah} onChange={(e) => setClusterRumah(e.target.value)}>
-					<option value="" disabled>Pilih cluster rumah Anda</option>
-					<option value="Cluster Golden Flower">Cluster Marigold</option>
-					<option value="Cluster Camelia">Cluster Camelia</option>
-					</select>
-				</div>
-				<div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
-					<div className="nx-form-group">
-					<label>Blok Rumah</label>
-					<input id="blokInput" type="text" className="nx-input" placeholder="Contoh: A, B, C" value={blokRumah} onChange={(e) => setBlokRumah(e.target.value)} />
+						<label>Nomor WA Aktif</label>
+						<input id="hpInput" type="text" className="nx-input" placeholder="Contoh: 081234567890" value={noHp} onChange={(e) => setNoHp(e.target.value)} />
 					</div>
 					<div className="nx-form-group">
-					<label>Nomor Rumah</label>
-					<input id="nomorRumahInput" type="text" className="nx-input" placeholder="Contoh: 10, 25" value={nomorRumah} onChange={(e) => setNomorRumah(e.target.value)} />
+						<label>Nickname Akun Game</label>
+						<input id="nicknameInput" type="text" className="nx-input" placeholder="Masukkan nickname akun game Anda" value={nickname} onChange={(e) => setNickname(e.target.value)} />
 					</div>
-				</div>
-				<div className="nx-form-action">
-					<button type="button" className="nx-btn nx-btn-primary" disabled={status === "submitting"} onClick={handleSubmit}>
-					{status === "submitting" ? "Mengirim..." : "Kirim Pendaftaran"}<ChevronRight size={16} />
-					</button>
-				</div>
+					<div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+						<div className="nx-form-group">
+						<label>ID Game</label>
+						<input id="gameIdInput" type="number" className="nx-input" placeholder="Masukkan ID game" value={gameId} onChange={(e) => setGameId(e.target.value)} />
+						</div>
+						<div className="nx-form-group">
+						<label>Server Game</label>
+						<input id="serverInput" type="number" className="nx-input" placeholder="Masukkan nomor server" value={server} onChange={(e) => setServer(e.target.value)} />
+						</div>
+					</div>
+					<div className="nx-form-group">
+						<label>Cluster Rumah</label>
+						<select id="clusterInput" className="nx-input" value={clusterRumah} onChange={(e) => setClusterRumah(e.target.value)}>
+						<option value="" disabled>Pilih cluster rumah Anda</option>
+						<option value="Cluster Golden Flower">Cluster Marigold</option>
+						<option value="Cluster Camelia">Cluster Camelia</option>
+						</select>
+					</div>
+					<div className="nx-form-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+						<div className="nx-form-group">
+							<label>Blok Rumah</label>
+							<input id="blokInput" type="text" className="nx-input" placeholder="Contoh: A, B, C" value={blokRumah} onChange={(e) => setBlokRumah(e.target.value)} />
+						</div>
+						<div className="nx-form-group">
+							<label>Nomor Rumah</label>
+							<input id="nomorRumahInput" type="text" className="nx-input" placeholder="Contoh: 10, 25" value={nomorRumah} onChange={(e) => setNomorRumah(e.target.value)} />
+						</div>
+					</div>
+					<div className="nx-form-action">
+						<button type="button" className="nx-btn nx-btn-primary" disabled={status === "submitting"} onClick={handleSubmit}>
+						{status === "submitting" ? "Mengirim..." : "Kirim Pendaftaran"}<ChevronRight size={16} />
+						</button>
+					</div>
 				</div>
 			</div>
 		</section>
 	);
+}
+
+/* ------------------------------------------------------------------ */
+/*  ADMIN PANEL                                                        */
+/* ------------------------------------------------------------------ */
+
+function AdminPanel({ settings, setSettings, onLogout }) {
+  const [saving, setSaving] = useState(false);
+  const API_URL = "https://api.ipl-q.com/api/v1/web/BracketMLBB";
+
+  const toggleSetting = async (key) => {
+    const updated = { ...settings, [key]: !settings[key] };
+    setSettings(updated);
+    localStorage.setItem("gf_settings", JSON.stringify(updated));
+
+    // Simpan ke API
+    setSaving(true);
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: "SAVE_SETTINGS",
+          registration_open: updated.registrationOpen ? 1 : 0,
+          show_bracket: updated.showBracket ? 1 : 0,
+          show_matches: updated.showMatches ? 1 : 0,
+        }),
+      });
+    } catch (err) { /* ignore */ }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <section id="admin" className="nx-page">
+      <HexField dense />
+      <div className="nx-page-inner" style={{ paddingTop: "60px", maxWidth: "600px", margin: "0 auto" }}>
+        <div className="nx-section-head" style={{ textAlign: "center" }}>
+          <span className="nx-section-eyebrow">Panel Kontrol</span>
+          <h1>Admin</h1>
+        </div>
+        <div className="nx-form" style={{ marginTop: "30px" }}>
+          <div className="nx-form-divider">Pengaturan Website</div>
+
+          <div className="nx-admin-toggle">
+            <div>
+              <strong>Pendaftaran Peserta</strong>
+              <p style={{ color: "var(--muted)", fontSize: "12px", margin: "4px 0 0" }}>Buka/tutup form pendaftaran peserta baru</p>
+            </div>
+            <button className={`nx-toggle-btn ${settings.registrationOpen ? "is-on" : ""}`} onClick={() => toggleSetting("registrationOpen")}>
+              <span className="nx-toggle-knob" />
+              <span className="nx-toggle-label">{settings.registrationOpen ? "BUKA" : "TUTUP"}</span>
+            </button>
+          </div>
+
+          <div className="nx-admin-toggle">
+            <div>
+              <strong>Bagan Turnamen</strong>
+              <p style={{ color: "var(--muted)", fontSize: "12px", margin: "4px 0 0" }}>Tampilkan halaman bagan turnamen & pengundian</p>
+            </div>
+            <button className={`nx-toggle-btn ${settings.showBracket ? "is-on" : ""}`} onClick={() => toggleSetting("showBracket")}>
+              <span className="nx-toggle-knob" />
+              <span className="nx-toggle-label">{settings.showBracket ? "TAMPIL" : "SEMBUNYI"}</span>
+            </button>
+          </div>
+
+          <div className="nx-admin-toggle">
+            <div>
+              <strong>Halaman Pertandingan</strong>
+              <p style={{ color: "var(--muted)", fontSize: "12px", margin: "4px 0 0" }}>Tampilkan halaman bracket pertandingan</p>
+            </div>
+            <button className={`nx-toggle-btn ${settings.showMatches ? "is-on" : ""}`} onClick={() => toggleSetting("showMatches")}>
+              <span className="nx-toggle-knob" />
+              <span className="nx-toggle-label">{settings.showMatches ? "TAMPIL" : "SEMBUNYI"}</span>
+            </button>
+          </div>
+
+          <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid var(--line)" }}>
+            <button className="nx-btn nx-btn-ghost" onClick={onLogout} style={{ width: "100%", justifyContent: "center" }}>
+              Keluar dari Admin
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -1124,24 +2025,69 @@ function Register() {
 
 export default function NexusClashApp() {
   const [page, setPage] = useState("home");
-  const [showBracket, setShowBracket] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem("gf_admin") === "true");
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem("gf_settings");
+    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+  });
 
   const go = useCallback((p) => {
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  // Fetch settings dari API saat load
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("https://api.ipl-q.com/api/v1/web/BracketMLBB", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ method: "GET_SETTINGS" }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.error_code === "0" && data.settings) {
+            const s = {
+              registrationOpen: data.settings.registration_open === 1,
+              showBracket: data.settings.show_bracket === 1,
+              showMatches: data.settings.show_matches === 1,
+            };
+            setSettings(s);
+            localStorage.setItem("gf_settings", JSON.stringify(s));
+          }
+        }
+      } catch (err) { /* gunakan default/localStorage */ }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleAdminLogin = () => {
+    setIsAdmin(true);
+    localStorage.setItem("gf_admin", "true");
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    localStorage.removeItem("gf_admin");
+    setPage("home");
+  };
+
   return (
     <div className="nx-root">
       <style>{CSS}</style>
-      <Nav page={page} go={go} showBracket={showBracket} />
+      <Nav page={page} go={go} showBracket={settings.showBracket} showMatches={settings.showMatches} isAdmin={isAdmin} onAdminLogin={handleAdminLogin} />
       <ClusterRibbon />
-      {page === "register" ? (
-        <Register />
+      {page === "admin" && isAdmin ? (
+        <AdminPanel settings={settings} setSettings={setSettings} onLogout={handleAdminLogout} />
+      ) : page === "register" ? (
+        <Register registrationOpen={settings.registrationOpen} />
       ) : page === "players" ? (
         <Players />
       ) : page === "bracket" ? (
-        <Bracket go={go} />
+        <ErrorBoundary><Bracket go={go} isAdmin={isAdmin} /></ErrorBoundary>
+      ) : page === "matches" ? (
+        <ErrorBoundary><Matches isAdmin={isAdmin} /></ErrorBoundary>
       ) : page === "schedule" ? (
         <Schedule />
       ) : (
@@ -1192,9 +2138,10 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-nav { position: sticky; top: 0; z-index: 50; background: rgba(3,10,20,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
 .nx-nav-inner { max-width: 1180px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
 .nx-brand { display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; }
-.nx-brand-mark { width: 32px; height: 32px; display: grid; place-items: center; background: linear-gradient(145deg, rgba(11,128,244,0.12), rgba(11,128,244,0.08)); border: 1px solid rgba(11,128,244,0.4); border-radius: 8px; color: var(--cyan); }
+.nx-brand-mark { width: 32px; height: 32px; display: grid; place-items: center; background: linear-gradient(145deg, rgba(196,214,60,0.12), rgba(168,191,48,0.08)); border: 1px solid rgba(196,214,60,0.4); border-radius: 8px; }
+.nx-brand-logo { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; }
 .nx-brand-text { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 15px; color: var(--text); letter-spacing: 0.06em; }
-.nx-brand-accent { color: var(--magenta); }
+.nx-brand-accent { color: #C4D63C; }
 .nx-nav-links { display: flex; gap: 6px; }
 .nx-nav-link { background: none; border: none; color: var(--muted); font-weight: 600; font-size: 15px; padding: 8px 14px; border-radius: 6px; position: relative; transition: color 0.2s; letter-spacing: 0.02em; }
 .nx-nav-link:hover { color: var(--text); }
@@ -1248,7 +2195,7 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-section-head { text-align: center; margin-bottom: 36px; }
 .nx-section-eyebrow { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; color: var(--magenta); text-transform: uppercase; margin-bottom: 10px; }
 .nx-section-head h1, .nx-section-head h2 { font-size: clamp(26px, 4vw, 38px); }
-.nx-section-desc { color: var(--muted); margin-top: 12px; font-size: 15px; max-width: 520px; margin-left: auto; margin-right: auto; }
+.nx-section-desc { color: var(--muted); margin-top: 12px; font-size: 15px; max-width: 520px; margin-left: auto; margin-right: auto; text-align: center; }
 
 /* ---------- GENERIC PAGE ---------- */
 .nx-page { position: relative; min-height: 70vh; padding: 60px 20px 90px; }
@@ -1298,8 +2245,8 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-bracket-team-name { font-size: 13px; font-weight: 600; color: var(--text); }
 .nx-bracket-vs { text-align: center; font-size: 10px; font-weight: 700; color: var(--primary); padding: 2px 0; }
 .nx-bracket-teams-detail { margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--line); text-align: center; }
-.nx-bracket-teams-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; max-width: 1000px; margin: 0 auto; }
-.nx-bracket-team-card { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: 220px; }
+.nx-bracket-teams-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; max-width: 1200px; margin: 0 auto; }
+.nx-bracket-team-card { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: 180px; }
 .nx-bracket-team-card.is-active { border-color: var(--primary); box-shadow: 0 0 12px rgba(11, 128, 244, 0.3); }
 .nx-bracket-team-card-head { background: var(--bg-panel-2); padding: 10px 14px; font-size: 13px; font-weight: 700; color: var(--primary); border-bottom: 1px solid var(--line); text-align: center; }
 .nx-bracket-team-members { list-style: none; padding: 10px 14px; margin: 0; text-align: center; }
@@ -1309,6 +2256,8 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 
 /* ---------- SPIN WHEEL ---------- */
 .nx-spin-layout { display: flex; gap: 30px; margin-top: 40px; align-items: flex-start; }
+.nx-spin-layout.is-viewer { justify-content: center; }
+.nx-spin-layout.is-viewer .nx-spin-teams { flex: none; width: 100%; }
 .nx-spin-section { flex: 0 0 400px; padding: 30px 20px; background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); }
 .nx-spin-teams { flex: 1; min-width: 0; }
 @media (max-width: 800px) {
@@ -1319,6 +2268,103 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-spin-canvas { border-radius: 50%; box-shadow: 0 0 30px rgba(11, 128, 244, 0.2); }
 .nx-spin-controls { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .nx-spin-result { text-align: center; padding: 16px; background: var(--bg-panel-2); border-radius: var(--radius); border: 1px solid var(--line); }
+
+/* ---------- BRACKET DRAW ---------- */
+.nx-draw-section { margin-top: 50px; border-top: 1px solid var(--line); padding-top: 30px; }
+.nx-draw-header { text-align: center; margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.nx-draw-header h3 { margin: 0; }
+.nx-draw-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 24px; padding: 20px; background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); min-height: 80px; transition: border-color 0.3s; }
+.nx-draw-grid.is-shuffling { border-color: var(--primary); box-shadow: 0 0 16px rgba(11,128,244,0.15); }
+.nx-draw-team-card { display: flex; align-items: center; gap: 10px; padding: 12px 18px; background: var(--bg-panel-2); border: 1px solid var(--line); border-radius: 8px; transition: all 0.15s; }
+.nx-draw-team-card.is-final { border-color: rgba(0,255,163,0.4); animation: nxDrawPop 0.4s ease forwards; }
+.nx-draw-team-seed { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800; color: var(--primary); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; background: rgba(11,128,244,0.1); border-radius: 50%; }
+.nx-draw-team-name { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.nx-draw-team-card.is-bye-card { border-color: rgba(0,255,163,0.3); background: rgba(0,255,163,0.04); }
+.nx-draw-bye-badge { font-size: 9px; font-weight: 800; color: #00FFA3; background: rgba(0,255,163,0.15); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.05em; }
+.nx-draw-results { margin-bottom: 24px; padding: 20px; background: var(--bg-panel); border: 1px solid rgba(0,255,163,0.2); border-radius: var(--radius); animation: nxFadeUp 0.5s ease forwards; }
+.nx-draw-pairs { display: flex; flex-direction: column; gap: 12px; }
+.nx-draw-pair { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-panel-2); border-radius: 8px; border: 1px solid var(--line); }
+.nx-draw-pair-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary); min-width: 55px; }
+.nx-draw-pair-teams { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: center; }
+.nx-draw-pair-team { font-size: 14px; font-weight: 600; color: var(--text); }
+.nx-draw-pair-vs { font-size: 11px; font-weight: 800; color: var(--primary); padding: 3px 8px; background: rgba(11,128,244,0.1); border-radius: 4px; }
+.nx-draw-controls { text-align: center; margin-top: 20px; }
+@keyframes nxDrawPop { from { transform: scale(0.95); opacity: 0.7; } to { transform: scale(1); opacity: 1; } }
+@media (max-width: 500px) {
+  .nx-draw-grid { padding: 14px; gap: 8px; }
+  .nx-draw-team-card { padding: 10px 12px; }
+  .nx-draw-team-name { font-size: 12px; }
+  .nx-draw-pair { flex-direction: column; gap: 6px; align-items: flex-start; }
+  .nx-draw-pair-teams { width: 100%; }
+}
+
+/* ---------- TOURNAMENT BRACKET ---------- */
+.nx-tourney { margin-top: 40px; overflow-x: auto; padding-bottom: 20px; }
+.nx-tourney-header { display: flex; gap: 0; margin-bottom: 16px; padding: 0 10px; }
+.nx-tourney-round-label { text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary); padding: 10px 8px; background: var(--bg-panel-2); border: 1px solid var(--line); border-radius: var(--radius); margin: 0 16px; display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; min-width: 0; }
+.nx-tourney-champ-label { flex: 0.6; }
+.nx-tourney-bracket { display: flex; align-items: stretch; padding: 0 10px; }
+.nx-tourney-round { display: flex; flex-direction: column; justify-content: space-around; flex: 1; min-width: 170px; padding: 0 4px; }
+.nx-tourney-match-wrapper { display: flex; align-items: center; flex: 1; position: relative; }
+.nx-tourney-match { flex: 1; background: var(--bg-panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.nx-tourney-match.is-bye-match { opacity: 0.5; border-style: dashed; }
+.nx-tourney-slot { display: flex; align-items: center; gap: 6px; padding: 10px 12px; transition: background 0.15s; }
+.nx-tourney-slot-top { border-bottom: 1px solid var(--line); }
+.nx-tourney-slot:hover { background: rgba(11,128,244,0.05); }
+.nx-tourney-slot.is-bye { opacity: 0.4; }
+.nx-tourney-slot.is-winner { background: rgba(0,255,163,0.06); }
+.nx-tourney-slot.is-winner .nx-tourney-name { color: #00FFA3; }
+.nx-tourney-slot.is-winner .nx-tourney-score { color: #00FFA3; }
+.nx-tourney-seed { font-size: 10px; font-weight: 700; color: var(--muted); min-width: 16px; text-align: center; }
+.nx-tourney-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nx-tourney-score { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 800; color: var(--muted); min-width: 20px; text-align: center; }
+
+/* Connector arm from match to next round */
+.nx-tourney-arm-right { width: 28px; flex-shrink: 0; position: relative; }
+.nx-tourney-arm-right::before { content: ""; position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: var(--line); }
+
+/* Vertical connectors for bracket tree lines */
+.nx-tourney-round:not(:first-child) .nx-tourney-match-wrapper::before { content: ""; position: absolute; left: -4px; top: 0; bottom: 50%; width: 2px; background: var(--line); }
+.nx-tourney-round:not(:first-child) .nx-tourney-match-wrapper::after { content: ""; position: absolute; left: -4px; top: 50%; bottom: 0; width: 2px; background: var(--line); }
+.nx-tourney-round:not(:first-child) .nx-tourney-match-wrapper:first-child::before { display: none; }
+.nx-tourney-round:not(:first-child) .nx-tourney-match-wrapper:last-child::after { display: none; }
+/* Horizontal arm entering match from left connector */
+.nx-tourney-round:not(:first-child) .nx-tourney-match-wrapper .nx-tourney-match::before { content: ""; position: absolute; left: -32px; top: 50%; width: 28px; height: 2px; background: var(--line); z-index: 1; }
+
+.nx-tourney-champion-round { min-width: 120px; max-width: 140px; flex: 0.6; padding: 0 4px; }
+.nx-tourney-champion { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px 14px; background: linear-gradient(135deg, rgba(255,201,60,0.08), rgba(255,201,60,0.02)); border: 2px solid rgba(255,201,60,0.3); border-radius: var(--radius); height: 100%; min-height: 80px; }
+.nx-tourney-champion-text { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800; color: #FFC93C; }
+
+/* Clickable matches */
+.nx-tourney-match.is-clickable { cursor: pointer; border-color: var(--primary); }
+.nx-tourney-match.is-clickable:hover { box-shadow: 0 0 12px rgba(11,128,244,0.3); transform: translateY(-1px); }
+.nx-tourney-match.is-done { border-color: rgba(0,255,163,0.3); }
+
+/* Score Input Modal */
+.nx-tourney-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+.nx-tourney-modal { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; max-width: 520px; width: 100%; position: relative; animation: nxFadeUp 0.25s ease; }
+.nx-tourney-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.nx-tourney-modal-header h4 { font-size: 16px; color: var(--primary); margin: 0; }
+.nx-tourney-modal-close { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.15s; }
+.nx-tourney-modal-close:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+.nx-tourney-modal-scoreboard { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 20px; background: var(--bg-panel-2); border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--line); }
+.nx-tourney-modal-team { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.nx-tourney-modal-team.is-winner .nx-tourney-modal-name { color: #00FFA3; }
+.nx-tourney-modal-team.is-winner .nx-tourney-modal-score { color: #00FFA3; text-shadow: 0 0 12px rgba(0,255,163,0.4); }
+.nx-tourney-modal-name { font-size: 14px; font-weight: 700; color: var(--text); text-align: center; }
+.nx-tourney-modal-score { font-family: 'Montserrat', sans-serif; font-size: 32px; font-weight: 900; color: var(--text); }
+.nx-tourney-modal-vs { font-size: 13px; font-weight: 800; color: var(--primary); padding: 6px 12px; background: rgba(11,128,244,0.08); border: 1px solid rgba(11,128,244,0.2); border-radius: 6px; }
+.nx-tourney-modal-games { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+@media (max-width: 400px) { .nx-tourney-modal-games { grid-template-columns: repeat(3, 1fr); } }
+
+@media (max-width: 700px) {
+  .nx-tourney-round { min-width: 130px; }
+  .nx-tourney-slot { padding: 8px 8px; }
+  .nx-tourney-name { font-size: 11px; }
+  .nx-tourney-header { flex-wrap: nowrap; }
+  .nx-tourney-round-label { font-size: 9px; padding: 8px 4px; min-width: 0; margin: 0 8px; }
+  .nx-tourney-arm-right { width: 20px; }
+}
 
 /* ---------- LEAGUE (ROUND ROBIN) ---------- */
 .nx-league-wrap { max-width: 750px; margin: 30px auto 0; display: flex; flex-direction: column; gap: 30px; }
@@ -1370,6 +2416,16 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
   .nx-league-score-num { font-size: 22px; }
   .nx-league-table th, .nx-league-table td { padding: 10px 6px; font-size: 12px; }
 }
+
+/* ---------- ADMIN ---------- */
+.nx-admin-toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.nx-admin-toggle:last-of-type { border-bottom: none; }
+.nx-toggle-btn { position: relative; width: 80px; height: 36px; border-radius: 18px; border: 2px solid var(--line); background: var(--bg-void); cursor: pointer; transition: all 0.25s; display: flex; align-items: center; padding: 0 6px; }
+.nx-toggle-btn.is-on { border-color: #00FFA3; background: rgba(0,255,163,0.1); }
+.nx-toggle-knob { width: 24px; height: 24px; border-radius: 50%; background: var(--muted); transition: all 0.25s; flex-shrink: 0; }
+.nx-toggle-btn.is-on .nx-toggle-knob { background: #00FFA3; transform: translateX(38px); }
+.nx-toggle-label { position: absolute; left: 0; right: 0; text-align: center; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; color: var(--muted); pointer-events: none; }
+.nx-toggle-btn.is-on .nx-toggle-label { color: #00FFA3; }
 
 /* ---------- FOOTER ---------- */
 .nx-footer { border-top: 1px solid var(--line); padding: 22px 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--muted); position: relative; z-index: 2; }
