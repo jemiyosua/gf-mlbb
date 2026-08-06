@@ -411,8 +411,14 @@ function TournamentBracket({ teams, totalTeams, matches, onUpdate, isAdmin }) {
 
 	const roundLabels = { round1: "Babak 1", quarter: "Perempat Final", semi: "Semifinal", final: "Final" };
 
+	// Match perebutan juara 3
+	const thirdPlaceMatch = matchesByRound["third"] ? matchesByRound["third"][0] : null;
+
 	const finalMatch = matchesByRound["final"] ? matchesByRound["final"][0] : null;
 	const champion = finalMatch && finalMatch.winner ? teams.find((t) => t.id === finalMatch.winner) : null;
+	const runnerUp = finalMatch && finalMatch.winner && finalMatch.team_a && finalMatch.team_b
+		? teams.find((t) => t.id === (finalMatch.winner === finalMatch.team_a ? finalMatch.team_b : finalMatch.team_a))
+		: null;
 
 	if (activeRounds.length === 0) {
 		return <div style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}><p>Belum ada data pertandingan.</p></div>;
@@ -477,6 +483,73 @@ function TournamentBracket({ teams, totalTeams, matches, onUpdate, isAdmin }) {
 			</div>
 			</div>
 		</div>
+
+		
+
+		{/* Bracket Perebutan Juara 3 */}
+		{thirdPlaceMatch && (
+			<div className="nx-third-place">
+				<div className="nx-third-place-header">
+					<Trophy size={16} style={{ color: "#CD7F32" }} />
+					<h4>Perebutan Juara 3</h4>
+					<span className="nx-league-bo3-badge">BO3</span>
+				</div>
+				<div className="nx-third-place-match">
+					{(() => {
+						const m = thirdPlaceMatch;
+						const hasBothTeams = m.team_a > 0 && m.team_b > 0;
+						const isDone = m.status === "done";
+						const isClickable = isAdmin && hasBothTeams && !isDone;
+						const matchWinner = m.winner || 0;
+						return (
+							<div
+								className={`nx-tourney-match ${isClickable ? "is-clickable" : ""} ${isDone ? "is-done" : ""}`}
+								onClick={() => isClickable && setActiveMatch(m)}
+								style={{ maxWidth: "300px", margin: "0 auto" }}
+							>
+								<div className={`nx-tourney-slot nx-tourney-slot-top ${m.team_a === 0 ? "is-bye" : ""} ${matchWinner === m.team_a && matchWinner !== 0 ? "is-winner" : ""}`}>
+									<span className="nx-tourney-name">{m.team_a === 0 ? "Menunggu Semifinal" : getTeamName(m.team_a)}</span>
+									<span className="nx-tourney-score">{hasBothTeams ? (isDone ? m.score_a : "—") : "—"}</span>
+								</div>
+								<div className={`nx-tourney-slot nx-tourney-slot-bot ${m.team_b === 0 ? "is-bye" : ""} ${matchWinner === m.team_b && matchWinner !== 0 ? "is-winner" : ""}`}>
+									<span className="nx-tourney-name">{m.team_b === 0 ? "Menunggu Semifinal" : getTeamName(m.team_b)}</span>
+									<span className="nx-tourney-score">{hasBothTeams ? (isDone ? m.score_b : "—") : "—"}</span>
+								</div>
+							</div>
+						);
+					})()}
+				</div>
+				{thirdPlaceMatch.status === "done" && thirdPlaceMatch.winner > 0 && (
+					<div style={{ textAlign: "center", marginTop: "12px", color: "#CD7F32", fontSize: "14px", fontWeight: 600 }}>
+						Pemenang: {getTeamName(thirdPlaceMatch.winner)}
+					</div>
+				)}
+			</div>
+		)}
+
+    {/* Podium Juara 1, 2 & 3 */}
+		{(champion || runnerUp) && (
+			<div className="nx-podium">
+				<div className="nx-podium-card nx-podium-silver">
+					<div className="nx-podium-rank">JUARA 2</div>
+					<div className="nx-podium-trophy">🥈</div>
+					<div className="nx-podium-name">{runnerUp ? runnerUp.name : "TBD"}</div>
+				</div>
+				<div className="nx-podium-card nx-podium-gold">
+					<div className="nx-podium-rank">JUARA 1</div>
+					<div className="nx-podium-trophy">🏆</div>
+					<div className="nx-podium-name">{champion ? champion.name : "TBD"}</div>
+					<div className="nx-podium-glow" />
+				</div>
+				{thirdPlaceMatch && thirdPlaceMatch.status === "done" && thirdPlaceMatch.winner > 0 && (
+					<div className="nx-podium-card nx-podium-bronze">
+						<div className="nx-podium-rank">JUARA 3</div>
+						<div className="nx-podium-trophy">🥉</div>
+						<div className="nx-podium-name">{getTeamName(thirdPlaceMatch.winner)}</div>
+					</div>
+				)}
+			</div>
+		)}
 
 		{/* Score Input Modal */}
 		{activeMatch && (
@@ -1323,6 +1396,25 @@ function BracketDraw({ teams, go }) {
         allRounds.push({ roundName: round1RoundName, matches: round1Matches });
         laterRounds.forEach((r) => allRounds.push(r));
 
+        // Tambahkan match perebutan Juara 3 (tim yang kalah di semifinal)
+        // Hanya jika ada round semi dengan minimal 2 match
+        const semiRound = laterRounds.find((r) => r.roundName === "semi");
+        if (semiRound && semiRound.matches.length >= 2) {
+          allRounds.push({
+            roundName: "third",
+            matches: [{ code: "3RD", teamA: 0, teamB: 0, order: 1, nextMatchCode: "", nextSlot: "" }]
+          });
+
+          // Set semifinal matches agar yang kalah masuk ke 3RD
+          // SF-1 loser → 3RD team_a, SF-2 loser → 3RD team_b
+          semiRound.matches[0].loserNextMatchCode = "3RD";
+          semiRound.matches[0].loserNextSlot = "a";
+          if (semiRound.matches[1]) {
+            semiRound.matches[1].loserNextMatchCode = "3RD";
+            semiRound.matches[1].loserNextSlot = "b";
+          }
+        }
+
         // Simpan semua match ke API
         for (let rIdx = 0; rIdx < allRounds.length; rIdx++) {
           const round = allRounds[rIdx];
@@ -1340,6 +1432,8 @@ function BracketDraw({ teams, go }) {
                 match_order: match.order,
                 next_match_code: match.nextMatchCode || "",
                 next_slot: match.nextSlot || "",
+                loser_next_match_code: match.loserNextMatchCode || "",
+                loser_next_slot: match.loserNextSlot || "",
               }),
             });
             if (!res.ok) throw new Error(`Gagal menyimpan match ${match.code}`);
@@ -1661,11 +1755,128 @@ function Matches({ isAdmin }) {
             <p className="nx-section-desc">Bracket pertandingan akan ditampilkan setelah proses pengundian tim selesai.</p>
           </div>
         ) : !hasMatches ? (
-          <div style={{ padding: "60px 20px", background: "var(--bg-panel)", borderRadius: "var(--radius)", border: "1px dashed var(--line)", marginTop: "40px", maxWidth: "600px", marginLeft: "auto", marginRight: "auto", textAlign: "center" }}>
-            <Swords size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px", opacity: 0.5 }} />
-            <h2 style={{ marginBottom: "10px" }}>Menunggu Pengundian</h2>
-            <p className="nx-section-desc">Bracket pertandingan akan ditampilkan setelah proses pengundian lawan selesai di halaman Bagan Turnamen.</p>
-          </div>
+          <>
+            <div style={{ textAlign: "center", marginTop: "30px", marginBottom: "20px" }}>
+              <p style={{ color: "var(--muted)", fontSize: "14px" }}>
+                Pengundian lawan belum dilakukan. Berikut adalah format bracket yang akan digunakan:
+              </p>
+            </div>
+
+            <div className="nx-bracket-info">
+              <span className="nx-chip"><Users size={14} /> {players.length} Peserta</span>
+              <span className="nx-chip"><Swords size={14} /> {totalTeams} Tim</span>
+              <span className="nx-chip"><Trophy size={14} /> {totalTeams === 3 ? "Round Robin BO3" : "Eliminasi"}</span>
+            </div>
+
+            {/* Preview bracket layout */}
+            <div className="nx-tourney" style={{ opacity: 0.6 }}>
+              <div className="nx-tourney-header">
+                {(() => {
+                  const bracketSize = Math.pow(2, Math.ceil(Math.log2(totalTeams)));
+                  const previewRounds = [];
+                  let slots = bracketSize;
+                  while (slots >= 2) {
+                    let label;
+                    if (slots === 2) label = "Final";
+                    else if (slots === 4) label = "Semifinal";
+                    else if (slots === 8) label = "Perempat Final";
+                    else label = "Babak 1";
+                    previewRounds.push(label);
+                    slots = slots / 2;
+                  }
+                  // Hapus round yang tidak punya match (BYE penuh)
+                  const numByes = bracketSize - totalTeams;
+                  if (numByes >= bracketSize / 2) previewRounds.shift();
+                  return previewRounds.map((label, i) => (
+                    <div className="nx-tourney-round-label" key={i}>{label}</div>
+                  ));
+                })()}
+                <div className="nx-tourney-round-label nx-tourney-champ-label">
+                  <Trophy size={14} /> Champion
+                </div>
+              </div>
+
+              <div className="nx-tourney-bracket">
+                {(() => {
+                  const bracketSize = Math.pow(2, Math.ceil(Math.log2(totalTeams)));
+                  const numByes = bracketSize - totalTeams;
+                  const numFirstRoundMatches = totalTeams - (bracketSize / 2);
+                  const previewRounds = [];
+
+                  // Round 1 (hanya match yang ada)
+                  if (numFirstRoundMatches > 0) {
+                    const r1Matches = [];
+                    for (let i = 0; i < numFirstRoundMatches; i++) {
+                      r1Matches.push(i);
+                    }
+                    previewRounds.push(r1Matches);
+                  }
+
+                  // Round 2 (semifinal size)
+                  const r2Size = bracketSize / 4;
+                  if (r2Size >= 1) {
+                    const r2Matches = [];
+                    for (let i = 0; i < r2Size; i++) r2Matches.push(i);
+                    previewRounds.push(r2Matches);
+                  }
+
+                  // Final
+                  previewRounds.push([0]);
+
+                  return previewRounds.map((roundMatches, rIdx) => (
+                    <div className="nx-tourney-round" key={rIdx}>
+                      {roundMatches.map((_, mIdx) => (
+                        <div className="nx-tourney-match-wrapper" key={mIdx}>
+                          <div className="nx-tourney-match" style={{ borderStyle: "dashed" }}>
+                            <div className="nx-tourney-slot nx-tourney-slot-top">
+                              <span className="nx-tourney-name" style={{ color: "var(--muted)" }}>TBD</span>
+                              <span className="nx-tourney-score">—</span>
+                            </div>
+                            <div className="nx-tourney-slot nx-tourney-slot-bot">
+                              <span className="nx-tourney-name" style={{ color: "var(--muted)" }}>TBD</span>
+                              <span className="nx-tourney-score">—</span>
+                            </div>
+                          </div>
+                          {rIdx < previewRounds.length - 1 && <div className="nx-tourney-arm-right" />}
+                        </div>
+                      ))}
+                    </div>
+                  ));
+                })()}
+                <div className="nx-tourney-round nx-tourney-champion-round">
+                  <div className="nx-tourney-match-wrapper">
+                    <div className="nx-tourney-champion">
+                      <Crown size={22} style={{ color: "#FFC93C" }} />
+                      <span className="nx-tourney-champion-text">TBD</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview 3rd place */}
+            {totalTeams >= 4 && (
+              <div className="nx-third-place" style={{ opacity: 0.6 }}>
+                <div className="nx-third-place-header">
+                  <Trophy size={16} style={{ color: "#CD7F32" }} />
+                  <h4>Perebutan Juara 3</h4>
+                  <span className="nx-league-bo3-badge">BO3</span>
+                </div>
+                <div className="nx-third-place-match">
+                  <div className="nx-tourney-match" style={{ maxWidth: "300px", margin: "0 auto", borderStyle: "dashed" }}>
+                    <div className="nx-tourney-slot nx-tourney-slot-top">
+                      <span className="nx-tourney-name" style={{ color: "var(--muted)" }}>Kalah SF-1</span>
+                      <span className="nx-tourney-score">—</span>
+                    </div>
+                    <div className="nx-tourney-slot nx-tourney-slot-bot">
+                      <span className="nx-tourney-name" style={{ color: "var(--muted)" }}>Kalah SF-2</span>
+                      <span className="nx-tourney-score">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <>
             <div className="nx-bracket-info">
@@ -1700,23 +1911,147 @@ function Matches({ isAdmin }) {
 /* ------------------------------------------------------------------ */
 
 function Schedule() {
+  const [matches, setMatches] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [playersRes, matchesRes] = await Promise.all([
+          fetch("https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: "SELECT" }) }),
+          fetch("https://api.ipl-q.com/api/v1/web/BracketMLBB", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: "SELECT_MATCHES" }) }),
+        ]);
+        if (playersRes.ok) {
+          const pData = await playersRes.json();
+          if (pData.error_code === "0") {
+            const teamMap = {};
+            (pData.result || []).forEach((p) => {
+              if (p.nomor_team && p.nomor_team !== "0" && p.nomor_team !== "") {
+                const tNum = parseInt(p.nomor_team, 10);
+                if (tNum > 0 && !teamMap[tNum]) teamMap[tNum] = { id: tNum, name: `Tim ${tNum}` };
+              }
+            });
+            setTeams(Object.values(teamMap));
+          }
+        }
+        if (matchesRes.ok) {
+          const mData = await matchesRes.json();
+          if (mData.error_code === "0" && mData.matches) setMatches(mData.matches);
+        }
+      } catch (err) { /* ignore */ }
+      finally { setLoading(false); }
+    };
+    fetchData();
+  }, []);
+
+  const getTeamName = (id) => {
+    if (!id || id === 0) return "TBD";
+    const t = teams.find((tm) => tm.id === id);
+    return t ? t.name : `Tim ${id}`;
+  };
+
+  const roundLabels = { round1: "Babak 1", quarter: "Perempat Final", semi: "Semifinal", final: "Grand Final (BO5)", third: "Perebutan Juara 3" };
+  const roundOrder = ["round1", "quarter", "semi", "third", "final"];
+
+  const matchesByRound = {};
+  matches.forEach((m) => {
+    if (!matchesByRound[m.round]) matchesByRound[m.round] = [];
+    matchesByRound[m.round].push(m);
+  });
+
+  const activeRounds = roundOrder.filter((r) => matchesByRound[r] && matchesByRound[r].length > 0);
+
   return (
     <section id="schedule" className="nx-page">
       <HexField dense />
-      <div className="nx-page-inner" style={{ textAlign: "center", paddingTop: "60px" }}>
-        <div className="nx-section-head">
+      <div className="nx-page-inner" style={{ paddingTop: "60px" }}>
+        <div className="nx-section-head" style={{ textAlign: "center" }}>
           <span className="nx-section-eyebrow">Live Tracking</span>
           <h1>Jadwal &amp; Hasil Pertandingan</h1>
         </div>
-        <div style={{ padding: "60px 20px", background: "var(--bg-panel)", borderRadius: "var(--radius)", border: "1px dashed var(--line)", marginTop: "40px", maxWidth: "600px", marginLeft: "auto", marginRight: "auto" }}>
-          <Clock size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px", opacity: 0.5 }} />
-          <h2 style={{ marginBottom: "10px" }}>Belum Tersedia</h2>
-          <p className="nx-section-desc">Jadwal pertandingan akan dirilis segera setelah proses pengundian bagan selesai.</p>
-          <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap", marginTop: "30px" }}>
-            <span className="nx-chip"><Calendar size={14} /> 8 - 9 Agustus 2026</span>
-            <span className="nx-chip"><MapPin size={14} /> Sport Club Golden Flower</span>
-          </div>
+
+        <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap", marginTop: "20px", marginBottom: "30px" }}>
+          <span className="nx-chip"><Calendar size={14} /> 8 - 9 Agustus 2026</span>
+          <span className="nx-chip"><MapPin size={14} /> Sport Club Golden Flower</span>
         </div>
+
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}><p>Memuat data...</p></div>
+        ) : matches.length === 0 ? (
+          <div style={{ padding: "60px 20px", background: "var(--bg-panel)", borderRadius: "var(--radius)", border: "1px dashed var(--line)", marginTop: "20px", maxWidth: "600px", marginLeft: "auto", marginRight: "auto", textAlign: "center" }}>
+            <Clock size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px", opacity: 0.5 }} />
+            <h2 style={{ marginBottom: "10px" }}>Belum Tersedia</h2>
+            <p className="nx-section-desc">Jadwal pertandingan akan dirilis segera setelah proses pengundian bagan selesai.</p>
+          </div>
+        ) : (
+          <div className="nx-schedule-list">
+            {activeRounds.map((roundKey) => (
+              <div className="nx-schedule-round" key={roundKey}>
+                <h3 className="nx-schedule-round-title">{roundLabels[roundKey] || roundKey}</h3>
+                <div className="nx-schedule-matches">
+                  {(matchesByRound[roundKey] || []).sort((a, b) => a.match_order - b.match_order).map((m) => (
+                    <div className={`nx-schedule-match ${m.status === "done" ? "is-done" : ""}`} key={m.id}>
+                      <div className="nx-schedule-teams">
+                        <span className={`nx-schedule-team ${m.winner === m.team_a ? "is-winner" : ""}`}>
+                          {getTeamName(m.team_a)}
+                        </span>
+                        <span className="nx-schedule-score">
+                          {m.team_a > 0 && m.team_b > 0 ? `${m.score_a} - ${m.score_b}` : "vs"}
+                        </span>
+                        <span className={`nx-schedule-team ${m.winner === m.team_b ? "is-winner" : ""}`}>
+                          {getTeamName(m.team_b)}
+                        </span>
+                      </div>
+                      <div className="nx-schedule-status">
+                        <span className={`nx-schedule-badge ${m.status}`}>
+                          {m.status === "done" ? "SELESAI" : m.status === "live" ? "LIVE" : "MENDATANG"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Podium Juara */}
+            {(() => {
+              const finalM = matchesByRound["final"] ? matchesByRound["final"][0] : null;
+              const thirdM = matchesByRound["third"] ? matchesByRound["third"][0] : null;
+              const champ = finalM && finalM.winner ? getTeamName(finalM.winner) : null;
+              const runner = finalM && finalM.winner ? getTeamName(finalM.winner === finalM.team_a ? finalM.team_b : finalM.team_a) : null;
+              const third = thirdM && thirdM.winner ? getTeamName(thirdM.winner) : null;
+
+              if (!champ && !third) return null;
+              return (
+                <div className="nx-podium" style={{ marginTop: "40px" }}>
+                  {runner && (
+                    <div className="nx-podium-card nx-podium-silver">
+                      <div className="nx-podium-rank">JUARA 2</div>
+                      <div className="nx-podium-trophy">🥈</div>
+                      <div className="nx-podium-name">{runner}</div>
+                    </div>
+                  )}
+                  {champ && (
+                    <div className="nx-podium-card nx-podium-gold">
+                      <div className="nx-podium-rank">JUARA 1</div>
+                      <div className="nx-podium-trophy">🏆</div>
+                      <div className="nx-podium-name">{champ}</div>
+                      <div className="nx-podium-glow" />
+                    </div>
+                  )}
+                  {third && (
+                    <div className="nx-podium-card nx-podium-bronze">
+                      <div className="nx-podium-rank">JUARA 3</div>
+                      <div className="nx-podium-trophy">🥉</div>
+                      <div className="nx-podium-name">{third}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -2245,6 +2580,30 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-players-table tbody tr:last-child td { border-bottom: none; }
 .nx-players-table tbody tr:hover { background: rgba(11, 128, 244, 0.06); }
 
+/* ---------- SCHEDULE ---------- */
+.nx-schedule-list { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+.nx-schedule-round { }
+.nx-schedule-round-title { font-size: 14px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.nx-schedule-matches { display: flex; flex-direction: column; gap: 8px; }
+.nx-schedule-match { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--bg-panel); border: 1px solid var(--line); border-radius: 8px; transition: border-color 0.2s; }
+.nx-schedule-match.is-done { border-color: rgba(0,255,163,0.2); }
+.nx-schedule-teams { display: flex; align-items: center; gap: 12px; flex: 1; }
+.nx-schedule-team { font-size: 14px; font-weight: 600; color: var(--text); min-width: 80px; }
+.nx-schedule-team:last-child { text-align: right; }
+.nx-schedule-team.is-winner { color: #00FFA3; }
+.nx-schedule-score { font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 800; color: var(--muted); min-width: 50px; text-align: center; }
+.nx-schedule-match.is-done .nx-schedule-score { color: var(--text); }
+.nx-schedule-status { margin-left: 12px; }
+.nx-schedule-badge { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+.nx-schedule-badge.done { background: rgba(0,255,163,0.1); color: #00FFA3; }
+.nx-schedule-badge.live { background: rgba(255,46,99,0.1); color: #FF2E63; animation: nxBlink 1.6s ease-in-out infinite; }
+.nx-schedule-badge.upcoming { background: rgba(11,128,244,0.1); color: var(--primary); }
+@media (max-width: 500px) {
+  .nx-schedule-match { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .nx-schedule-teams { width: 100%; justify-content: space-between; }
+  .nx-schedule-status { margin-left: 0; }
+}
+
 /* ---------- BRACKET ---------- */
 .nx-bracket-info { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
 .nx-bracket-container { display: flex; gap: 20px; overflow-x: auto; padding: 40px 0; align-items: flex-start; justify-content: center; }
@@ -2351,6 +2710,35 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-tourney-match.is-clickable { cursor: pointer; border-color: var(--primary); }
 .nx-tourney-match.is-clickable:hover { box-shadow: 0 0 12px rgba(11,128,244,0.3); transform: translateY(-1px); }
 .nx-tourney-match.is-done { border-color: rgba(0,255,163,0.3); }
+
+/* 3rd Place Match */
+.nx-third-place { margin-top: 30px; padding: 24px 0; }
+.nx-third-place-header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; }
+.nx-third-place-header h4 { margin: 0; font-size: 16px; color: #CD7F32; }
+.nx-third-place-match { display: flex; justify-content: center; }
+.nx-third-place-result { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; padding: 12px; background: rgba(205,127,50,0.08); border: 1px solid rgba(205,127,50,0.2); border-radius: 8px; font-size: 14px; color: #CD7F32; }
+
+/* Podium Juara 1 & 2 */
+.nx-podium { display: flex; gap: 20px; justify-content: center; align-items: center; margin-top: 30px; padding: 30px 20px; }
+.nx-podium-card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 28px 24px; border-radius: 16px; text-align: center; min-width: 180px; overflow: hidden; }
+.nx-podium-gold { background: linear-gradient(180deg, rgba(255,201,60,0.12) 0%, rgba(255,201,60,0.03) 100%); border: 2px solid rgba(255,201,60,0.5); box-shadow: 0 0 40px rgba(255,201,60,0.15), 0 8px 32px rgba(0,0,0,0.3); }
+.nx-podium-silver { background: linear-gradient(180deg, rgba(192,192,192,0.1) 0%, rgba(192,192,192,0.02) 100%); border: 2px solid rgba(192,192,192,0.4); box-shadow: 0 0 20px rgba(192,192,192,0.1), 0 4px 16px rgba(0,0,0,0.2); }
+.nx-podium-bronze { background: linear-gradient(180deg, rgba(205,127,50,0.1) 0%, rgba(205,127,50,0.02) 100%); border: 2px solid rgba(205,127,50,0.4); box-shadow: 0 0 20px rgba(205,127,50,0.1), 0 4px 16px rgba(0,0,0,0.2); }
+.nx-podium-bronze .nx-podium-rank { color: #CD7F32; }
+.nx-podium-bronze .nx-podium-name { color: #CD7F32; }
+.nx-podium-crown { font-size: 28px; align-self: center; animation: nxBob 2s ease-in-out infinite; }
+.nx-podium-rank { font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
+.nx-podium-gold .nx-podium-rank { color: #FFC93C; }
+.nx-podium-silver .nx-podium-rank { color: #C0C0C0; }
+.nx-podium-trophy { font-size: 36px; }
+.nx-podium-name { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 800; }
+.nx-podium-gold .nx-podium-name { color: #FFC93C; text-shadow: 0 0 20px rgba(255,201,60,0.4); }
+.nx-podium-silver .nx-podium-name { color: #E0E0E0; }
+.nx-podium-glow { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(255,201,60,0.08) 0%, transparent 70%); pointer-events: none; }
+@media (max-width: 500px) {
+  .nx-podium { flex-direction: column; align-items: center; }
+  .nx-podium-card { min-width: 160px; width: 100%; max-width: 250px; }
+}
 
 /* Score Input Modal */
 .nx-tourney-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
