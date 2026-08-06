@@ -978,7 +978,19 @@ function Bracket({ go, isAdmin }) {
     }
   };
 
-  const resetSpin = () => {
+  const resetSpin = async () => {
+    // Reset nomor_team semua peserta ke 0 via API
+    try {
+      const promises = players.map((p) =>
+        fetch("https://api.ipl-q.com/api/v1/web/SubmitRegisterMLBB", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ method: "UPDATE", nomor_team: "0", id: p.id }),
+        })
+      );
+      await Promise.all(promises);
+    } catch (err) { /* ignore */ }
+
     setUnassigned([...players]);
     const totalTeams = Math.ceil(players.length / TEAM_SIZE);
     const emptyTeams = [];
