@@ -4,6 +4,9 @@ import {
   Clock, MapPin, Swords, ChevronDown, Radio, Flag, Lock, Plus, Trash2, Check
 } from "lucide-react";
 import logoGF from "./assets/assets/logo_golden_flower.PNG";
+import imgBracket from "./assets/assets/bracket.png";
+import imgRundown from "./assets/assets/rundown.png";
+import imgTatatertib from "./assets/assets/tata_tertib_peraturan.png";
 
 /* ------------------------------------------------------------------ */
 /*  ERROR BOUNDARY                                                     */
@@ -492,7 +495,7 @@ function TournamentBracket({ teams, totalTeams, matches, onUpdate, isAdmin }) {
 				<div className="nx-third-place-header">
 					<Trophy size={16} style={{ color: "#CD7F32" }} />
 					<h4>Perebutan Juara 3</h4>
-					<span className="nx-league-bo3-badge">BO3</span>
+					<span className="nx-league-bo3-badge">BO1</span>
 				</div>
 				<div className="nx-third-place-match">
 					{(() => {
@@ -695,75 +698,61 @@ function LeagueBracket({ teams, matches, onUpdate, isAdmin }) {
     .map((t) => ({ ...t, wins: winsMap[t.id] || 0, gameWins: gameWinsMap[t.id] || 0, gameLosses: gameLossesMap[t.id] || 0 }))
     .sort((a, b) => b.wins - a.wins || (b.gameWins - b.gameLosses) - (a.gameWins - a.gameLosses));
 
-  const getRank = (wins) => {
-    if (wins === 2) return { rank: 1, emoji: "🥇", label: "Juara 1" };
-    if (wins === 1) return { rank: 2, emoji: "🥈", label: "Juara 2" };
-    return { rank: 3, emoji: "🥉", label: "Juara 3" };
+  const getRank = (position) => {
+    if (position === 1) return { rank: 1, emoji: "🥇", label: "Juara 1" };
+    if (position === 2) return { rank: 2, emoji: "🥈", label: "Juara 2" };
+    if (position === 3) return { rank: 3, emoji: "🥉", label: "Juara 3" };
+    return { rank: position, emoji: "", label: `Peringkat ${position}` };
   };
 
   return (
     <div className="nx-league-wrap">
-      <div className="nx-league-matches">
+      <div className="nx-league-layout">
+        <div className="nx-league-matches">
         {matchList.map((match, idx) => {
           const currentGame = match.games.filter((g) => g && g !== 0).length + 1;
           return (
             <div className={`nx-league-match-card ${match.finished ? "is-finished" : ""}`} key={match.id}>
               <div className="nx-league-match-header">
                 <div className="nx-league-match-label">Pertandingan {idx + 1}</div>
-                <span className="nx-league-bo3-badge">BO3</span>
+                <span className="nx-league-bo3-badge">BO1</span>
               </div>
 
               <div className="nx-league-scoreboard">
                 <div className={`nx-league-score-team ${match.winner === match.team_a ? "is-winner" : ""}`}>
                   <span className="nx-league-score-name">{match.teamAData?.name || `Tim ${match.team_a}`}</span>
-                  <span className="nx-league-score-num">{match.score_a}</span>
                 </div>
                 <div className="nx-league-score-divider">
-                  {match.finished ? <Crown size={16} style={{ color: "#FFC93C" }} /> : <span>—</span>}
+                  {match.finished ? <Crown size={16} style={{ color: "#FFC93C" }} /> : <span>VS</span>}
                 </div>
                 <div className={`nx-league-score-team ${match.winner === match.team_b ? "is-winner" : ""}`}>
-                  <span className="nx-league-score-num">{match.score_b}</span>
                   <span className="nx-league-score-name">{match.teamBData?.name || `Tim ${match.team_b}`}</span>
                 </div>
               </div>
 
-              <div className="nx-league-games">
-                {[1, 2, 3].map((gameNum) => {
-                  const gameWinner = match.games[gameNum - 1];
-                  const isPlayed = gameWinner && gameWinner !== 0;
-                  const isCurrent = !match.finished && gameNum === currentGame;
-                  const isSkipped = match.finished && !isPlayed;
-                  return (
-                    <div className={`nx-league-game ${isPlayed ? "is-played" : ""} ${isCurrent ? "is-current" : ""} ${isSkipped ? "is-skipped" : ""}`} key={gameNum}>
-                      <span className="nx-league-game-label">Game {gameNum}</span>
-                      {isPlayed ? (
-                        <span className="nx-league-game-winner">
-                          <Crown size={10} /> {gameWinner === match.team_a ? (match.teamAData?.name || `Tim ${match.team_a}`) : (match.teamBData?.name || `Tim ${match.team_b}`)}
-                        </span>
-                      ) : isSkipped ? (
-                        <span className="nx-league-game-skip">—</span>
-                      ) : isCurrent && isAdmin ? (
-                        <div className="nx-league-game-btns">
-                          <button className="nx-league-game-btn" disabled={updating} onClick={() => recordGame(match.id, gameNum, match.team_a)}>
-                            {match.teamAData?.name || `Tim ${match.team_a}`}
-                          </button>
-                          <button className="nx-league-game-btn" disabled={updating} onClick={() => recordGame(match.id, gameNum, match.team_b)}>
-                            {match.teamBData?.name || `Tim ${match.team_b}`}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="nx-league-game-pending">Menunggu</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {!match.finished && isAdmin && (
+                <div className="nx-league-bo1-btns">
+                  <button className="nx-league-bo1-btn" disabled={updating} onClick={() => {
+                    if (confirm(`Yakin ${match.teamAData?.name || `Tim ${match.team_a}`} yang menang? Hasil tidak bisa diubah.`)) recordGame(match.id, 1, match.team_a);
+                  }}>
+                    <Crown size={12} /> {match.teamAData?.name || `Tim ${match.team_a}`} Menang
+                  </button>
+                  <button className="nx-league-bo1-btn" disabled={updating} onClick={() => {
+                    if (confirm(`Yakin ${match.teamBData?.name || `Tim ${match.team_b}`} yang menang? Hasil tidak bisa diubah.`)) recordGame(match.id, 1, match.team_b);
+                  }}>
+                    <Crown size={12} /> {match.teamBData?.name || `Tim ${match.team_b}`} Menang
+                  </button>
+                </div>
+              )}
+
+              {!match.finished && !isAdmin && (
+                <div style={{ textAlign: "center", color: "var(--muted)", fontSize: "13px", padding: "8px 0" }}>Menunggu hasil</div>
+              )}
 
               {match.finished && (
                 <div className="nx-league-match-result">
                   <Trophy size={14} />
                   <span>Pemenang: <strong>{match.winner === match.team_a ? (match.teamAData?.name) : (match.teamBData?.name)}</strong></span>
-                  <span className="nx-league-match-score-final">({match.score_a} - {match.score_b})</span>
                 </div>
               )}
             </div>
@@ -788,7 +777,7 @@ function LeagueBracket({ teams, matches, onUpdate, isAdmin }) {
             {standings.map((t, idx) => {
               const matchLosses = (teams.length - 1) - t.wins;
               const gameDiff = t.gameWins - t.gameLosses;
-              const rankInfo = allMatchesPlayed ? getRank(t.wins) : null;
+              const rankInfo = allMatchesPlayed ? getRank(idx + 1) : null;
               return (
                 <tr key={t.id} className={allMatchesPlayed && rankInfo.rank === 1 ? "is-champion" : ""}>
                   <td>{idx + 1}</td>
@@ -820,9 +809,10 @@ function LeagueBracket({ teams, matches, onUpdate, isAdmin }) {
         </table>
         {!allMatchesPlayed && (
           <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "12px", marginTop: "12px" }}>
-            Klik nama tim pemenang tiap game. Format BO3: tim pertama yang menang 2 game memenangkan pertandingan.
+            Pilih tim pemenang untuk setiap pertandingan.
           </p>
         )}
+      </div>
       </div>
     </div>
   );
@@ -1180,7 +1170,6 @@ function BracketDraw({ teams, go }) {
   const API_URL = "https://api.ipl-q.com/api/v1/web/BracketMLBB";
 
   const totalTeams = teams.length;
-  const isLeague = totalTeams === 3;
 
   // Cek apakah sudah ada data seed tersimpan
   useEffect(() => {
@@ -1270,175 +1259,24 @@ function BracketDraw({ teams, go }) {
       const seedData = await seedResponse.json();
       if (seedData.error_code !== "0") throw new Error(seedData.error_message || "Gagal menyimpan seed");
 
-      // 2. Generate dan simpan match untuk semua round
-      if (isLeague) {
-        // Liga: simpan semua pasangan round robin
-        const matchPairs = getMatchPairs();
-        for (let i = 0; i < matchPairs.length; i++) {
-          const pair = matchPairs[i];
-          const matchPayload = {
-            method: "SAVE_MATCH",
-            match_code: `LIGA-${i + 1}`,
-            round: "league",
-            team_a: pair.teamA ? pair.teamA.id : 0,
-            team_b: pair.teamB ? pair.teamB.id : 0,
-            match_order: i + 1,
-          };
-          const matchResponse = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(matchPayload),
-          });
-          if (!matchResponse.ok) throw new Error(`Gagal menyimpan match LIGA-${i + 1}`);
-        }
-      } else {
-        // Eliminasi: generate bracket sesuai jumlah tim
-        // Tim yang BYE langsung masuk round lebih tinggi tanpa bertanding
-        const bracketSize = Math.pow(2, Math.ceil(Math.log2(totalTeams)));
-        const numByes = bracketSize - totalTeams;
-        
-        // Atur seeding: tim awal mendapat BYE, tim akhir bertanding round 1
-        const byeTeams = shuffledTeams.slice(0, numByes);
-        const playingTeams = shuffledTeams.slice(numByes);
-
-        // Susun semua rounds dan match codes dulu
-        // Round 2 slots: [bye1, bye2, ..., TBD, TBD, ...]
-        const round2Size = bracketSize / 2;
-        const round2Slots = [];
-        let byeIdx = 0;
-        for (let i = 0; i < round2Size; i++) {
-          if (byeIdx < byeTeams.length) {
-            round2Slots.push(byeTeams[byeIdx].id);
-            byeIdx++;
-          } else {
-            round2Slots.push(0);
-          }
-        }
-
-        // Generate all match codes per round
-        const allRounds = []; // [{roundName, matches: [{code, teamA, teamB, order, nextMatchCode, nextSlot}]}]
-        
-        // Round 1 (hanya match yang ada tim)
-        const round1RoundName = bracketSize === 4 ? "semi" : bracketSize === 8 ? "quarter" : "round1";
-        const round1Matches = [];
-        let r1Order = 0;
-        for (let i = 0; i < playingTeams.length; i += 2) {
-          r1Order++;
-          let code;
-          if (round1RoundName === "semi") code = `SF-${r1Order}`;
-          else if (round1RoundName === "quarter") code = `QF-${r1Order}`;
-          else code = `R1-${r1Order}`;
-          round1Matches.push({ code, teamA: playingTeams[i]?.id || 0, teamB: playingTeams[i + 1]?.id || 0, order: r1Order });
-        }
-
-        // Round 2+: generate matches from round2Slots
-        const laterRounds = [];
-        let currentSlots = round2Slots;
-        while (currentSlots.length >= 2) {
-          const matchCount = currentSlots.length / 2;
-          let roundName;
-          if (currentSlots.length === 2) roundName = "final";
-          else if (currentSlots.length === 4) roundName = "semi";
-          else roundName = "quarter";
-
-          const roundMatches = [];
-          const nextSlots = [];
-          let order = 0;
-          for (let i = 0; i < matchCount; i++) {
-            order++;
-            let code;
-            if (roundName === "final") code = "GF";
-            else if (roundName === "semi") code = `SF-${order}`;
-            else code = `QF-${order}`;
-            roundMatches.push({ code, teamA: currentSlots[i * 2] || 0, teamB: currentSlots[i * 2 + 1] || 0, order });
-            nextSlots.push(0);
-          }
-          laterRounds.push({ roundName, matches: roundMatches });
-          currentSlots = nextSlots;
-        }
-
-        // Tentukan next_match_code untuk round 1 matches
-        // Round 1 winners masuk ke posisi TBD (0) di round2Slots
-        // Cari posisi TBD di round2Slots dan mapping ke match di round 2
-        const tdbPositions = []; // index di round2Slots yang nilainya 0
-        for (let i = 0; i < round2Slots.length; i++) {
-          if (round2Slots[i] === 0) tdbPositions.push(i);
-        }
-
-        // Setiap round1 match (urutan ke-n) feed ke tdbPositions[n]
-        for (let i = 0; i < round1Matches.length; i++) {
-          if (i < tdbPositions.length && laterRounds.length > 0) {
-            const tdbPos = tdbPositions[i];
-            const targetMatchIdx = Math.floor(tdbPos / 2); // match ke berapa di round 2
-            const targetSlot = tdbPos % 2 === 0 ? "a" : "b"; // slot a atau b
-            if (targetMatchIdx < laterRounds[0].matches.length) {
-              round1Matches[i].nextMatchCode = laterRounds[0].matches[targetMatchIdx].code;
-              round1Matches[i].nextSlot = targetSlot;
-            }
-          }
-        }
-
-        // Tentukan next_match_code untuk later rounds
-        for (let rIdx = 0; rIdx < laterRounds.length; rIdx++) {
-          const nextRound = rIdx < laterRounds.length - 1 ? laterRounds[rIdx + 1] : null;
-          for (let mIdx = 0; mIdx < laterRounds[rIdx].matches.length; mIdx++) {
-            if (nextRound) {
-              const nextMatchIdx = Math.floor(mIdx / 2);
-              if (nextMatchIdx < nextRound.matches.length) {
-                laterRounds[rIdx].matches[mIdx].nextMatchCode = nextRound.matches[nextMatchIdx].code;
-                laterRounds[rIdx].matches[mIdx].nextSlot = mIdx % 2 === 0 ? "a" : "b";
-              }
-            }
-          }
-        }
-
-        // Gabungkan semua rounds
-        allRounds.push({ roundName: round1RoundName, matches: round1Matches });
-        laterRounds.forEach((r) => allRounds.push(r));
-
-        // Tambahkan match perebutan Juara 3 (tim yang kalah di semifinal)
-        // Hanya jika ada round semi dengan minimal 2 match
-        const semiRound = laterRounds.find((r) => r.roundName === "semi");
-        if (semiRound && semiRound.matches.length >= 2) {
-          allRounds.push({
-            roundName: "third",
-            matches: [{ code: "3RD", teamA: 0, teamB: 0, order: 1, nextMatchCode: "", nextSlot: "" }]
-          });
-
-          // Set semifinal matches agar yang kalah masuk ke 3RD
-          // SF-1 loser → 3RD team_a, SF-2 loser → 3RD team_b
-          semiRound.matches[0].loserNextMatchCode = "3RD";
-          semiRound.matches[0].loserNextSlot = "a";
-          if (semiRound.matches[1]) {
-            semiRound.matches[1].loserNextMatchCode = "3RD";
-            semiRound.matches[1].loserNextSlot = "b";
-          }
-        }
-
-        // Simpan semua match ke API
-        for (let rIdx = 0; rIdx < allRounds.length; rIdx++) {
-          const round = allRounds[rIdx];
-          for (let mIdx = 0; mIdx < round.matches.length; mIdx++) {
-            const match = round.matches[mIdx];
-            const res = await fetch(API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                method: "SAVE_MATCH",
-                match_code: match.code,
-                round: round.roundName,
-                team_a: match.teamA,
-                team_b: match.teamB,
-                match_order: match.order,
-                next_match_code: match.nextMatchCode || "",
-                next_slot: match.nextSlot || "",
-                loser_next_match_code: match.loserNextMatchCode || "",
-                loser_next_slot: match.loserNextSlot || "",
-              }),
-            });
-            if (!res.ok) throw new Error(`Gagal menyimpan match ${match.code}`);
-          }
-        }
+      // 2. Generate dan simpan match round robin (semua tim saling bertemu)
+      const matchPairs = getMatchPairs();
+      for (let i = 0; i < matchPairs.length; i++) {
+        const pair = matchPairs[i];
+        const matchPayload = {
+          method: "SAVE_MATCH",
+          match_code: `LIGA-${i + 1}`,
+          round: "league",
+          team_a: pair.teamA ? pair.teamA.id : 0,
+          team_b: pair.teamB ? pair.teamB.id : 0,
+          match_order: i + 1,
+        };
+        const matchResponse = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(matchPayload),
+        });
+        if (!matchResponse.ok) throw new Error(`Gagal menyimpan match LIGA-${i + 1}`);
       }
 
       setSaved(true);
@@ -1467,31 +1305,108 @@ function BracketDraw({ teams, go }) {
     } catch (err) { /* ignore */ }
   };
 
-  // Generate match pairs from shuffled order
+  // Generate match pairs round robin dengan jeda (tim tidak main 2x berturut-turut)
+  // Menggunakan circle method untuk scheduling yang balanced
   const getMatchPairs = () => {
     if (shuffledTeams.length === 0) return [];
-    if (isLeague) {
-      const pairs = [];
-      for (let i = 0; i < shuffledTeams.length; i++) {
-        for (let j = i + 1; j < shuffledTeams.length; j++) {
-          pairs.push({ teamA: shuffledTeams[i], teamB: shuffledTeams[j] });
+    const n = shuffledTeams.length;
+    const teamList = [...shuffledTeams];
+
+    // Jika ganjil, tambah "BYE" placeholder
+    if (n % 2 !== 0) teamList.push(null);
+    const total = teamList.length;
+    const rounds = total - 1;
+    const halfSize = total / 2;
+
+    // Generate rounds menggunakan circle method
+    const schedule = [];
+    const fixed = teamList[0];
+    const rotating = teamList.slice(1);
+
+    for (let round = 0; round < rounds; round++) {
+      const roundPairs = [];
+      // Fixed team vs rotating[0]
+      roundPairs.push({ teamA: fixed, teamB: rotating[0] });
+      // Pair remaining
+      for (let i = 1; i < halfSize; i++) {
+        roundPairs.push({ teamA: rotating[i], teamB: rotating[total - 1 - i] });
+      }
+      schedule.push(roundPairs);
+      // Rotate: move last to front
+      rotating.unshift(rotating.pop());
+    }
+
+    // Flatten rounds dan filter BYE pairs
+    // Interleave: ambil 1 match per round secara bergantian untuk spread yang lebih baik
+    const allMatches = [];
+    const maxMatchesPerRound = halfSize;
+    for (let slot = 0; slot < maxMatchesPerRound; slot++) {
+      for (let round = 0; round < rounds; round++) {
+        if (slot < schedule[round].length) {
+          const pair = schedule[round][slot];
+          if (pair.teamA && pair.teamB) {
+            allMatches.push(pair);
+          }
         }
       }
-      return pairs;
     }
-    // Bracket eliminasi: pad ke power of 2, BYE di akhir
-    const bracketSize = Math.pow(2, Math.ceil(Math.log2(shuffledTeams.length)));
-    const padded = [...shuffledTeams];
-    while (padded.length < bracketSize) padded.push(null); // null = BYE
-    const pairs = [];
-    for (let i = 0; i < padded.length; i += 2) {
-      const tA = padded[i];
-      const tB = padded[i + 1] !== undefined ? padded[i + 1] : null;
-      // Skip double BYE
-      if (!tA && !tB) continue;
-      pairs.push({ teamA: tA, teamB: tB });
+
+    // Re-order agar setiap tim punya jeda minimal 1 game (tidak main 2x berturut-turut)
+    const ordered = [];
+    const remaining = [...allMatches];
+    
+    while (remaining.length > 0) {
+      let placed = false;
+      for (let i = 0; i < remaining.length; i++) {
+        const candidate = remaining[i];
+        
+        // Cek match terakhir yang sudah ditempatkan
+        if (ordered.length > 0) {
+          const lastMatch = ordered[ordered.length - 1];
+          const lastTeams = new Set();
+          if (lastMatch.teamA) lastTeams.add(lastMatch.teamA.id);
+          if (lastMatch.teamB) lastTeams.add(lastMatch.teamB.id);
+
+          // Jika salah satu tim candidate bermain di match sebelumnya, skip
+          const conflict = (candidate.teamA && lastTeams.has(candidate.teamA.id)) ||
+                           (candidate.teamB && lastTeams.has(candidate.teamB.id));
+          if (conflict) continue;
+        }
+
+        // Tidak ada konflik, tempatkan
+        ordered.push(candidate);
+        remaining.splice(i, 1);
+        placed = true;
+        break;
+      }
+      
+      // Jika semua candidate konflik (deadlock), paksa ambil yang konflik paling sedikit
+      if (!placed) {
+        if (ordered.length > 0) {
+          const lastMatch = ordered[ordered.length - 1];
+          const lastTeams = new Set();
+          if (lastMatch.teamA) lastTeams.add(lastMatch.teamA.id);
+          if (lastMatch.teamB) lastTeams.add(lastMatch.teamB.id);
+
+          // Cari yang hanya 1 tim konflik (bukan kedua-duanya)
+          let bestIdx = 0;
+          let bestConflicts = 3;
+          for (let i = 0; i < remaining.length; i++) {
+            const c = remaining[i];
+            let conflicts = 0;
+            if (c.teamA && lastTeams.has(c.teamA.id)) conflicts++;
+            if (c.teamB && lastTeams.has(c.teamB.id)) conflicts++;
+            if (conflicts < bestConflicts) { bestConflicts = conflicts; bestIdx = i; }
+          }
+          ordered.push(remaining[bestIdx]);
+          remaining.splice(bestIdx, 1);
+        } else {
+          ordered.push(remaining.shift());
+        }
+      }
     }
-    return pairs;
+
+    return ordered;
   };
 
   if (teams.length < 2) return null;
@@ -1502,10 +1417,7 @@ function BracketDraw({ teams, go }) {
         <Swords size={20} style={{ color: "var(--primary)" }} />
         <h3>Pengundian Lawan</h3>
         <p style={{ color: "var(--muted)", fontSize: "13px", marginTop: "6px" }}>
-          {isLeague
-            ? "Acak urutan pertandingan liga (semua tim saling bertemu)"
-            : "Acak posisi tim di bracket untuk menentukan lawan"
-          }
+          Acak urutan pertandingan liga (semua tim saling bertemu)
         </p>
       </div>
 
@@ -1514,7 +1426,7 @@ function BracketDraw({ teams, go }) {
         {(shuffledTeams.length > 0 ? shuffledTeams : teams).filter(Boolean).map((t, idx) => {
           const bracketSize = Math.pow(2, Math.ceil(Math.log2(totalTeams)));
           const numByes = bracketSize - totalTeams;
-          const isByeTeam = drawDone && !isLeague && idx < numByes;
+          const isByeTeam = false;
           return (
             <div
               className={`nx-draw-team-card ${drawDone ? "is-final" : ""} ${isByeTeam ? "is-bye-card" : ""}`}
@@ -1530,69 +1442,11 @@ function BracketDraw({ teams, go }) {
       </div>
 
       {/* Match Pairs Result */}
-      {drawDone && !isLeague && (
+      {/* Hasil Pengundian - Round Robin */}
+      {drawDone && (
         <div className="nx-draw-results">
           <h4 style={{ textAlign: "center", color: "var(--primary)", marginBottom: "16px" }}>
-            Hasil Pengundian Bracket
-          </h4>
-
-          {/* Tim yang mendapat BYE */}
-          {(() => {
-            const bracketSize = Math.pow(2, Math.ceil(Math.log2(shuffledTeams.length)));
-            const numByes = bracketSize - shuffledTeams.length;
-            const byeTeamsList = shuffledTeams.slice(0, numByes);
-            const playingTeamsList = shuffledTeams.slice(numByes);
-
-            return (
-              <>
-                {byeTeamsList.length > 0 && (
-                  <div style={{ marginBottom: "16px" }}>
-                    <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
-                      Langsung Maju (BYE) — {byeTeamsList.length} tim
-                    </p>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      {byeTeamsList.map((t) => (
-                        <span key={t.id} className="nx-chip" style={{ borderColor: "rgba(0,255,163,0.3)", color: "#00FFA3" }}>
-                          <Crown size={12} /> {t.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tim yang bertanding round pertama */}
-                <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
-                  Pertandingan Babak Pertama
-                </p>
-                <div className="nx-draw-pairs">
-                  {(() => {
-                    const pairs = [];
-                    for (let i = 0; i < playingTeamsList.length; i += 2) {
-                      pairs.push({ teamA: playingTeamsList[i], teamB: playingTeamsList[i + 1] || null });
-                    }
-                    return pairs.map((pair, idx) => (
-                      <div className="nx-draw-pair" key={idx}>
-                        <span className="nx-draw-pair-label">Match {idx + 1}</span>
-                        <div className="nx-draw-pair-teams">
-                          <span className="nx-draw-pair-team">{pair.teamA ? pair.teamA.name : "TBD"}</span>
-                          <span className="nx-draw-pair-vs">VS</span>
-                          <span className="nx-draw-pair-team">{pair.teamB ? pair.teamB.name : "TBD"}</span>
-                        </div>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* Liga format - tampilkan semua match */}
-      {drawDone && isLeague && (
-        <div className="nx-draw-results">
-          <h4 style={{ textAlign: "center", color: "var(--primary)", marginBottom: "16px" }}>
-            Urutan Pertandingan
+            Urutan Pertandingan ({getMatchPairs().length} match)
           </h4>
           <div className="nx-draw-pairs">
             {getMatchPairs().map((pair, idx) => (
@@ -1739,7 +1593,7 @@ function Matches({ isAdmin }) {
       <div className="nx-page-inner" style={{ paddingTop: "60px" }}>
         <div className="nx-section-head" style={{ textAlign: "center" }}>
           <span className="nx-section-eyebrow">
-            {totalTeams === 3 ? "Format Liga Round Robin • BO3" : "Format Eliminasi Tunggal"}
+            {totalTeams === 3 ? "Format Liga Round Robin • BO1" : "Format Liga Round Robin • BO1"}
           </span>
           <h1>Bracket Pertandingan</h1>
         </div>
@@ -1765,7 +1619,7 @@ function Matches({ isAdmin }) {
             <div className="nx-bracket-info">
               <span className="nx-chip"><Users size={14} /> {players.length} Peserta</span>
               <span className="nx-chip"><Swords size={14} /> {totalTeams} Tim</span>
-              <span className="nx-chip"><Trophy size={14} /> {totalTeams === 3 ? "Round Robin BO3" : "Eliminasi"}</span>
+              <span className="nx-chip"><Trophy size={14} /> {"Round Robin BO1"}</span>
             </div>
 
             {/* Preview bracket layout */}
@@ -1860,7 +1714,7 @@ function Matches({ isAdmin }) {
                 <div className="nx-third-place-header">
                   <Trophy size={16} style={{ color: "#CD7F32" }} />
                   <h4>Perebutan Juara 3</h4>
-                  <span className="nx-league-bo3-badge">BO3</span>
+                  <span className="nx-league-bo3-badge">BO1</span>
                 </div>
                 <div className="nx-third-place-match">
                   <div className="nx-tourney-match" style={{ maxWidth: "300px", margin: "0 auto", borderStyle: "dashed" }}>
@@ -1882,23 +1736,16 @@ function Matches({ isAdmin }) {
             <div className="nx-bracket-info">
               <span className="nx-chip"><Users size={14} /> {players.length} Peserta</span>
               <span className="nx-chip"><Swords size={14} /> {totalTeams} Tim</span>
-              <span className="nx-chip"><Trophy size={14} /> {totalTeams === 3 ? "Round Robin BO3" : "Eliminasi"}</span>
+              <span className="nx-chip"><Trophy size={14} /> {"Round Robin BO1"}</span>
             </div>
 
-            {totalTeams === 3 && (
-              <div style={{ textAlign: "center", marginTop: "20px" }}>
-                <p style={{ color: "var(--muted)", fontSize: "13px" }}>
-                  Semua tim saling bertemu dengan format <strong style={{ color: "var(--primary)" }}>Best of 3 (BO3)</strong>. Penentuan juara berdasarkan jumlah kemenangan match:<br />
-                  🥇 2x Menang = Juara 1 &nbsp;|&nbsp; 🥈 1x Menang = Juara 2 &nbsp;|&nbsp; 🥉 0x Menang = Juara 3
-                </p>
-              </div>
-            )}
+            <div style={{ textAlign: "center", marginTop: "20px" }}>
+              <p style={{ color: "var(--muted)", fontSize: "13px" }}>
+                Semua tim saling bertemu dengan format <strong style={{ color: "var(--primary)" }}>Best of 1 (BO1)</strong>. Penentuan juara berdasarkan klasemen (jumlah kemenangan).
+              </p>
+            </div>
 
-            {totalTeams === 3 ? (
-              <LeagueBracket teams={teams} matches={matches} onUpdate={fetchData} isAdmin={isAdmin} />
-            ) : (
-              <TournamentBracket teams={getSeededTeams()} totalTeams={totalTeams} matches={matches} onUpdate={fetchData} isAdmin={isAdmin} />
-            )}
+            <LeagueBracket teams={teams} matches={matches} onUpdate={fetchData} isAdmin={isAdmin} />
           </>
         )}
       </div>
@@ -1974,6 +1821,22 @@ function Schedule() {
         <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap", marginTop: "20px", marginBottom: "30px" }}>
           <span className="nx-chip"><Calendar size={14} /> 8 - 9 Agustus 2026</span>
           <span className="nx-chip"><MapPin size={14} /> Sport Club Golden Flower</span>
+        </div>
+
+        {/* Info Images */}
+        <div className="nx-schedule-images">
+          <div className="nx-schedule-img-card">
+            <h4>Bracket Turnamen</h4>
+            <img src={imgBracket} alt="Bracket Turnamen" />
+          </div>
+          <div className="nx-schedule-img-card">
+            <h4>Rundown Acara</h4>
+            <img src={imgRundown} alt="Rundown Acara" />
+          </div>
+          <div className="nx-schedule-img-card">
+            <h4>Tata Tertib & Peraturan</h4>
+            <img src={imgTatatertib} alt="Tata Tertib dan Peraturan" />
+          </div>
         </div>
 
         {loading ? (
@@ -2581,6 +2444,10 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-players-table tbody tr:hover { background: rgba(11, 128, 244, 0.06); }
 
 /* ---------- SCHEDULE ---------- */
+.nx-schedule-images { display: flex; flex-direction: column; gap: 24px; max-width: 700px; margin: 0 auto 40px; }
+.nx-schedule-img-card { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.nx-schedule-img-card h4 { padding: 14px 18px; margin: 0; font-size: 14px; color: var(--primary); border-bottom: 1px solid var(--line); }
+.nx-schedule-img-card img { width: 100%; height: auto; display: block; }
 .nx-schedule-list { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
 .nx-schedule-round { }
 .nx-schedule-round-title { font-size: 14px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
@@ -2767,8 +2634,14 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 }
 
 /* ---------- LEAGUE (ROUND ROBIN) ---------- */
-.nx-league-wrap { max-width: 750px; margin: 30px auto 0; display: flex; flex-direction: column; gap: 30px; }
-.nx-league-matches { display: flex; flex-direction: column; gap: 20px; }
+.nx-league-wrap { max-width: 1200px; margin: 30px auto 0; display: flex; flex-direction: column; gap: 30px; }
+.nx-league-layout { display: flex; gap: 24px; align-items: flex-start; }
+.nx-league-matches { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.nx-league-standings { flex: 0 0 450px; position: sticky; top: 80px; }
+@media (max-width: 900px) {
+  .nx-league-layout { flex-direction: column; }
+  .nx-league-standings { flex: none; width: 100%; position: static; }
+}
 .nx-league-match-card { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; transition: border-color 0.2s; }
 .nx-league-match-card.is-finished { border-color: rgba(0,255,163,0.3); }
 .nx-league-match-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -2794,6 +2667,11 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-league-game-btn { font-size: 11px; font-weight: 600; padding: 6px 8px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg-panel); color: var(--text); cursor: pointer; transition: all 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nx-league-game-btn:hover { border-color: var(--primary); background: rgba(11,128,244,0.1); color: var(--primary); }
 .nx-league-match-result { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; background: rgba(0,255,163,0.06); border: 1px solid rgba(0,255,163,0.2); border-radius: 8px; font-size: 13px; color: #00FFA3; }
+.nx-league-bo1-btns { display: flex; gap: 8px; }
+.nx-league-bo1-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-panel-2); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.nx-league-bo1-btn:hover { border-color: var(--primary); background: rgba(11,128,244,0.08); color: var(--primary); }
+.nx-league-bo1-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 500px) { .nx-league-bo1-btns { flex-direction: column; } }
 .nx-league-match-score-final { color: var(--muted); font-weight: 600; }
 .nx-league-reset-btn { display: block; margin: 12px auto 0; background: none; border: none; font-size: 11px; color: var(--muted); cursor: pointer; text-decoration: underline; opacity: 0.7; transition: opacity 0.15s; }
 .nx-league-reset-btn:hover { opacity: 1; color: #FF4D4D; }
