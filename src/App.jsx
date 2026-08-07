@@ -4,12 +4,12 @@ import {
   Clock, MapPin, Swords, ChevronDown, Radio, Flag, Lock, Plus, Trash2, Check
 } from "lucide-react";
 import logoGF from "./assets/assets/logo_golden_flower.PNG";
-import imgBracket from "./assets/assets/bracket.png";
-import imgRundown from "./assets/assets/rundown.png";
-import imgTatatertib from "./assets/assets/tata_tertib_peraturan.png";
+// import imgBracket from "./assets/assets/bracket.png";
+import imgRundown from "./assets/assets/rundown_1hari_new.png";
+import imgTatatertib from "./assets/assets/tata_tertib_peraturan_new.png";
 
 /* ------------------------------------------------------------------ */
-/*  ERROR BOUNDARY                                                     */
+/*  ERROR BOUNDARY                                                    */
 /* ------------------------------------------------------------------ */
 
 class ErrorBoundary extends Component {
@@ -393,7 +393,7 @@ function TournamentBracket({ teams, totalTeams, matches, onUpdate, isAdmin }) {
 	const getTeamName = (id) => {
 		if (!id || id === 0) return "TBD";
 		const t = teams.find((tm) => tm.id === id);
-		return t ? t.name : `Tim ${id}`;
+		return t ? t.name : `Team ${id}`;
 	};
 
 	// Group matches by round
@@ -720,27 +720,27 @@ function LeagueBracket({ teams, matches, onUpdate, isAdmin }) {
 
               <div className="nx-league-scoreboard">
                 <div className={`nx-league-score-team ${match.winner === match.team_a ? "is-winner" : ""}`}>
-                  <span className="nx-league-score-name">{match.teamAData?.name || `Tim ${match.team_a}`}</span>
+                  <span className="nx-league-score-name">{match.teamAData?.name || `Team ${match.team_a}`}</span>
                 </div>
                 <div className="nx-league-score-divider">
                   {match.finished ? <Crown size={16} style={{ color: "#FFC93C" }} /> : <span>VS</span>}
                 </div>
                 <div className={`nx-league-score-team ${match.winner === match.team_b ? "is-winner" : ""}`}>
-                  <span className="nx-league-score-name">{match.teamBData?.name || `Tim ${match.team_b}`}</span>
+                  <span className="nx-league-score-name">{match.teamBData?.name || `Team ${match.team_b}`}</span>
                 </div>
               </div>
 
               {!match.finished && isAdmin && (
                 <div className="nx-league-bo1-btns">
                   <button className="nx-league-bo1-btn" disabled={updating} onClick={() => {
-                    if (confirm(`Yakin ${match.teamAData?.name || `Tim ${match.team_a}`} yang menang? Hasil tidak bisa diubah.`)) recordGame(match.id, 1, match.team_a);
+                    if (confirm(`Yakin ${match.teamAData?.name || `Team ${match.team_a}`} yang menang? Hasil tidak bisa diubah.`)) recordGame(match.id, 1, match.team_a);
                   }}>
-                    <Crown size={12} /> {match.teamAData?.name || `Tim ${match.team_a}`} Menang
+                    <Crown size={12} /> {match.teamAData?.name || `Team ${match.team_a}`} Menang
                   </button>
                   <button className="nx-league-bo1-btn" disabled={updating} onClick={() => {
-                    if (confirm(`Yakin ${match.teamBData?.name || `Tim ${match.team_b}`} yang menang? Hasil tidak bisa diubah.`)) recordGame(match.id, 1, match.team_b);
+                    if (confirm(`Yakin ${match.teamBData?.name || `Team ${match.team_b}`} yang menang? Hasil tidak bisa diubah.`)) recordGame(match.id, 1, match.team_b);
                   }}>
-                    <Crown size={12} /> {match.teamBData?.name || `Tim ${match.team_b}`} Menang
+                    <Crown size={12} /> {match.teamBData?.name || `Team ${match.team_b}`} Menang
                   </button>
                 </div>
               )}
@@ -766,7 +766,7 @@ function LeagueBracket({ teams, matches, onUpdate, isAdmin }) {
           <thead>
             <tr>
               <th>#</th>
-              <th>Tim</th>
+              <th>Team</th>
               <th>Match (M/K)</th>
               <th>Game (M/K)</th>
               <th>Selisih Game</th>
@@ -866,7 +866,7 @@ function Bracket({ go, isAdmin }) {
       const totalTeams = Math.ceil(players.length / TEAM_SIZE);
       const initialTeams = [];
       for (let i = 0; i < totalTeams; i++) {
-        initialTeams.push({ id: i + 1, name: `Tim ${i + 1}`, members: [] });
+        initialTeams.push({ id: i + 1, name: `Team ${i + 1}`, members: [] });
       }
       // Masukkan pemain yang sudah punya nomor_team ke tim masing-masing
       players.forEach((p) => {
@@ -1007,7 +1007,7 @@ function Bracket({ go, isAdmin }) {
 				const totalTeamsCount = Math.ceil(result.length / TEAM_SIZE);
 				const updatedTeams = [];
 				for (let i = 0; i < totalTeamsCount; i++) {
-					updatedTeams.push({ id: i + 1, name: `Tim ${i + 1}`, members: [] });
+					updatedTeams.push({ id: i + 1, name: `Team ${i + 1}`, members: [] });
 				}
 				result.forEach((p) => {
 					if (p.nomor_team) {
@@ -1057,7 +1057,7 @@ function Bracket({ go, isAdmin }) {
     setUnassigned([...players]);
     const totalTeams = Math.ceil(players.length / TEAM_SIZE);
     const emptyTeams = [];
-    for (let i = 0; i < totalTeams; i++) emptyTeams.push({ id: i + 1, name: `Tim ${i + 1}`, members: [] });
+    for (let i = 0; i < totalTeams; i++) emptyTeams.push({ id: i + 1, name: `Team ${i + 1}`, members: [] });
     setTeams(emptyTeams);
     setCurrentTeamIdx(0);
     setSelectedPlayer(null);
@@ -1073,7 +1073,7 @@ function Bracket({ go, isAdmin }) {
       <HexField dense />
       <div className="nx-page-inner" style={{ paddingTop: "60px" }}>
         <div className="nx-section-head" style={{ textAlign: "center" }}>
-          <span className="nx-section-eyebrow">Pengundian Tim</span>
+          <span className="nx-section-eyebrow">Pengundian Team</span>
           <h1>Bagan Turnamen</h1>
         </div>
         {loading ? (
@@ -1091,16 +1091,16 @@ function Bracket({ go, isAdmin }) {
           <>
             <div className="nx-bracket-info">
               <span className="nx-chip"><Users size={14} /> {totalPlayers} Peserta</span>
-              <span className="nx-chip"><Swords size={14} /> {totalTeams} Tim ({TEAM_SIZE} pemain/tim)</span>
+              <span className="nx-chip"><Swords size={14} /> {totalTeams} Team ({TEAM_SIZE} pemain/team)</span>
               <span className="nx-chip"><Check size={14} /> {totalPlayers - unassigned.length} Sudah Ditempatkan</span>
             </div>
 
             <div className={`nx-spin-layout ${!isAdmin ? "is-viewer" : ""}`}>
               {!allAssigned && isAdmin && (
                 <div className="nx-spin-section">
-                  <h3 style={{ textAlign: "center", marginBottom: "8px" }}>Putar Roda untuk Menentukan Tim</h3>
+                  <h3 style={{ textAlign: "center", marginBottom: "8px" }}>Putar Roda untuk Menentukan Team</h3>
                   <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "13px", marginBottom: "24px" }}>
-                    Pemain akan masuk ke <strong style={{ color: "var(--primary)" }}>Tim {currentTeamIdx + 1}</strong> &mdash; Sisa: {unassigned.length} pemain
+                    Pemain akan masuk ke <strong style={{ color: "var(--primary)" }}>Team {currentTeamIdx + 1}</strong> &mdash; Sisa: {unassigned.length} pemain
                   </p>
                   <div className="nx-spin-wheel-wrap">
                     <canvas ref={canvasRef} width={320} height={320} className="nx-spin-canvas" />
@@ -1117,7 +1117,7 @@ function Bracket({ go, isAdmin }) {
                           <span style={{ color: "var(--muted)", fontSize: "13px", marginLeft: "8px" }}>({selectedPlayer.nama})</span>
                         </p>
                         <button className="nx-btn nx-btn-primary" onClick={assignToTeam} disabled={assigning}>
-                          {assigning ? "Menyimpan..." : `Masukkan ke Tim ${currentTeamIdx + 1}`} <ChevronRight size={16} />
+                          {assigning ? "Menyimpan..." : `Masukkan ke Team ${currentTeamIdx + 1}`} <ChevronRight size={16} />
                         </button>
                       </div>
                     )}
@@ -1127,7 +1127,7 @@ function Bracket({ go, isAdmin }) {
               )}
               <div className="nx-spin-teams">
                 <h3 style={{ marginBottom: "20px", textAlign: "center" }}>
-                  {allAssigned ? "Susunan Tim (Final)" : "Susunan Tim (Sedang Berlangsung)"}
+                  {allAssigned ? "Susunan Team (Final)" : "Susunan Team (Sedang Berlangsung)"}
                 </h3>
                 <div className="nx-bracket-teams-grid">
                   {teams.map((t) => (
@@ -1545,7 +1545,7 @@ function Matches({ isAdmin }) {
             if (p.nomor_team && p.nomor_team !== "0" && p.nomor_team !== "") {
               const tNum = parseInt(p.nomor_team, 10);
               if (tNum > 0) {
-                if (!teamMap[tNum]) teamMap[tNum] = { id: tNum, name: `Tim ${tNum}`, members: [] };
+                if (!teamMap[tNum]) teamMap[tNum] = { id: tNum, name: `Team ${tNum}`, members: [] };
                 teamMap[tNum].members.push(p);
               }
             }
@@ -1605,7 +1605,7 @@ function Matches({ isAdmin }) {
         ) : totalTeams < 2 ? (
           <div style={{ padding: "60px 20px", background: "var(--bg-panel)", borderRadius: "var(--radius)", border: "1px dashed var(--line)", marginTop: "40px", maxWidth: "600px", marginLeft: "auto", marginRight: "auto", textAlign: "center" }}>
             <Lock size={48} className="nx-cta-icon" style={{ margin: "0 auto 20px", opacity: 0.5 }} />
-            <h2 style={{ marginBottom: "10px" }}>Belum Ada Tim</h2>
+            <h2 style={{ marginBottom: "10px" }}>Belum Ada Team</h2>
             <p className="nx-section-desc">Bracket pertandingan akan ditampilkan setelah proses pengundian tim selesai.</p>
           </div>
         ) : !hasMatches ? (
@@ -1618,7 +1618,7 @@ function Matches({ isAdmin }) {
 
             <div className="nx-bracket-info">
               <span className="nx-chip"><Users size={14} /> {players.length} Peserta</span>
-              <span className="nx-chip"><Swords size={14} /> {totalTeams} Tim</span>
+              <span className="nx-chip"><Swords size={14} /> {totalTeams} Team</span>
               <span className="nx-chip"><Trophy size={14} /> {"Round Robin BO1"}</span>
             </div>
 
@@ -1735,7 +1735,7 @@ function Matches({ isAdmin }) {
           <>
             <div className="nx-bracket-info">
               <span className="nx-chip"><Users size={14} /> {players.length} Peserta</span>
-              <span className="nx-chip"><Swords size={14} /> {totalTeams} Tim</span>
+              <span className="nx-chip"><Swords size={14} /> {totalTeams} Team</span>
               <span className="nx-chip"><Trophy size={14} /> {"Round Robin BO1"}</span>
             </div>
 
@@ -1776,7 +1776,7 @@ function Schedule() {
             (pData.result || []).forEach((p) => {
               if (p.nomor_team && p.nomor_team !== "0" && p.nomor_team !== "") {
                 const tNum = parseInt(p.nomor_team, 10);
-                if (tNum > 0 && !teamMap[tNum]) teamMap[tNum] = { id: tNum, name: `Tim ${tNum}` };
+                if (tNum > 0 && !teamMap[tNum]) teamMap[tNum] = { id: tNum, name: `Team ${tNum}` };
               }
             });
             setTeams(Object.values(teamMap));
@@ -1795,7 +1795,7 @@ function Schedule() {
   const getTeamName = (id) => {
     if (!id || id === 0) return "TBD";
     const t = teams.find((tm) => tm.id === id);
-    return t ? t.name : `Tim ${id}`;
+    return t ? t.name : `Team ${id}`;
   };
 
   const roundLabels = { round1: "Babak 1", quarter: "Perempat Final", semi: "Semifinal", final: "Grand Final (BO5)", third: "Perebutan Juara 3" };
@@ -1825,10 +1825,10 @@ function Schedule() {
 
         {/* Info Images */}
         <div className="nx-schedule-images">
-          <div className="nx-schedule-img-card">
+          {/* <div className="nx-schedule-img-card">
             <h4>Bracket Turnamen</h4>
             <img src={imgBracket} alt="Bracket Turnamen" />
-          </div>
+          </div> */}
           <div className="nx-schedule-img-card">
             <h4>Rundown Acara</h4>
             <img src={imgRundown} alt="Rundown Acara" />
