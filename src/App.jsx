@@ -690,28 +690,24 @@ function LeagueBracket({ teams, matches, onUpdate, isAdmin }) {
     }
   };
 
-  // Calculate wins per team
+  // Calculate wins and losses per team
   const winsMap = {};
-  const gameWinsMap = {};
-  const gameLossesMap = {};
-  teams.forEach((t) => { winsMap[t.id] = 0; gameWinsMap[t.id] = 0; gameLossesMap[t.id] = 0; });
+  const lossesMap = {};
+  teams.forEach((t) => { winsMap[t.id] = 0; lossesMap[t.id] = 0; });
 
   matchList.forEach((m) => {
     if (m.finished && m.winner) {
       winsMap[m.winner] = (winsMap[m.winner] || 0) + 1;
+      // Yang kalah
+      const loser = m.winner === m.team_a ? m.team_b : m.team_a;
+      if (loser) lossesMap[loser] = (lossesMap[loser] || 0) + 1;
     }
-    m.games.forEach((g) => {
-      if (g && g !== 0) {
-        if (g === m.team_a) { gameWinsMap[m.team_a]++; gameLossesMap[m.team_b]++; }
-        else if (g === m.team_b) { gameWinsMap[m.team_b]++; gameLossesMap[m.team_a]++; }
-      }
-    });
   });
 
   const allMatchesPlayed = matchList.every((m) => m.finished);
   const standings = teams
-    .map((t) => ({ ...t, wins: winsMap[t.id] || 0, gameWins: gameWinsMap[t.id] || 0, gameLosses: gameLossesMap[t.id] || 0 }))
-    .sort((a, b) => b.wins - a.wins || (b.gameWins - b.gameLosses) - (a.gameWins - a.gameLosses));
+    .map((t) => ({ ...t, wins: winsMap[t.id] || 0, losses: lossesMap[t.id] || 0 }))
+    .sort((a, b) => b.wins - a.wins);
 
   const getRank = (position) => {
     if (position === 1) return { rank: 1, emoji: "🥇", label: "Juara 1" };
@@ -781,35 +777,24 @@ function LeagueBracket({ teams, matches, onUpdate, isAdmin }) {
           <thead>
             <tr>
               <th>#</th>
-              <th>Team</th>
-              <th>Match (M/K)</th>
-              <th>Game (M/K)</th>
-              <th>Selisih Game</th>
+              <th>Tim</th>
+              <th>Menang</th>
+              <th>Kalah</th>
+              <th>Poin</th>
               {allMatchesPlayed && <th>Peringkat</th>}
             </tr>
           </thead>
           <tbody>
             {standings.map((t, idx) => {
-              const matchLosses = (teams.length - 1) - t.wins;
-              const gameDiff = t.gameWins - t.gameLosses;
+              const poin = t.wins; // Menang = +1, Kalah = 0
               const rankInfo = allMatchesPlayed ? getRank(idx + 1) : null;
               return (
                 <tr key={t.id} className={allMatchesPlayed && rankInfo.rank === 1 ? "is-champion" : ""}>
                   <td>{idx + 1}</td>
                   <td style={{ fontWeight: 600 }}>{t.name}</td>
-                  <td>
-                    <span style={{ color: "#00FFA3", fontWeight: 700 }}>{t.wins}</span>
-                    <span style={{ color: "var(--muted)" }}> / </span>
-                    <span style={{ color: "#FF4D4D", fontWeight: 700 }}>{matchLosses}</span>
-                  </td>
-                  <td>
-                    <span style={{ color: "#00FFA3", fontWeight: 700 }}>{t.gameWins}</span>
-                    <span style={{ color: "var(--muted)" }}> / </span>
-                    <span style={{ color: "#FF4D4D", fontWeight: 700 }}>{t.gameLosses}</span>
-                  </td>
-                  <td style={{ fontWeight: 700, color: gameDiff > 0 ? "#00FFA3" : gameDiff < 0 ? "#FF4D4D" : "var(--muted)" }}>
-                    {gameDiff > 0 ? `+${gameDiff}` : gameDiff}
-                  </td>
+                  <td style={{ color: "#00FFA3", fontWeight: 700 }}>{t.wins}</td>
+                  <td style={{ color: t.losses > 0 ? "#FF4D4D" : "var(--muted)", fontWeight: 700 }}>{t.losses}</td>
+                  <td style={{ fontWeight: 800, color: "var(--primary)", fontSize: "16px" }}>{poin}</td>
                   {allMatchesPlayed && (
                     <td>
                       <span className={`nx-league-rank rank-${rankInfo.rank}`}>
