@@ -7,6 +7,21 @@ import logoGF from "./assets/assets/logo_golden_flower.PNG";
 // import imgBracket from "./assets/assets/bracket.png";
 import imgRundown from "./assets/assets/rundown_1hari_new.png";
 import imgTatatertib from "./assets/assets/tata_tertib_peraturan_new.png";
+import imgJadwalTim1 from "./assets/assets/jadwal_tim/tim_1.png";
+import imgJadwalTim2 from "./assets/assets/jadwal_tim/tim_2.png";
+import imgJadwalTim3 from "./assets/assets/jadwal_tim/tim_3.png";
+import imgJadwalTim4 from "./assets/assets/jadwal_tim/tim_4.png";
+import imgJadwalTim5 from "./assets/assets/jadwal_tim/tim_5.png";
+import imgJadwalTim6 from "./assets/assets/jadwal_tim/tim_6.png";
+
+const JADWAL_TIM_IMAGES = [
+  { id: 1, label: "Tim 1", src: imgJadwalTim1 },
+  { id: 2, label: "Tim 2", src: imgJadwalTim2 },
+  { id: 3, label: "Tim 3", src: imgJadwalTim3 },
+  { id: 4, label: "Tim 4", src: imgJadwalTim4 },
+  { id: 5, label: "Tim 5", src: imgJadwalTim5 },
+  { id: 6, label: "Tim 6", src: imgJadwalTim6 },
+];
 
 /* ------------------------------------------------------------------ */
 /*  ERROR BOUNDARY                                                    */
@@ -1839,6 +1854,19 @@ function Schedule() {
           </div>
         </div>
 
+        {/* Jadwal Per Tim */}
+        <div className="nx-schedule-images">
+          <h3 style={{ textAlign: "center", marginBottom: "16px" }}>Jadwal Per Tim</h3>
+          <div className="nx-schedule-tim-grid">
+            {JADWAL_TIM_IMAGES.map((tim) => (
+              <div className="nx-schedule-img-card" key={tim.id}>
+                <h4>{tim.label}</h4>
+                <img src={tim.src} alt={`Jadwal ${tim.label}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+
         {loading ? (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}><p>Memuat data...</p></div>
         ) : matches.length === 0 ? (
@@ -2448,6 +2476,8 @@ html, body, #root { min-height: 100%; background: var(--bg-void); }
 .nx-schedule-img-card { background: var(--bg-panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .nx-schedule-img-card h4 { padding: 14px 18px; margin: 0; font-size: 14px; color: var(--primary); border-bottom: 1px solid var(--line); }
 .nx-schedule-img-card img { width: 100%; height: auto; display: block; }
+.nx-schedule-tim-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+@media (max-width: 600px) { .nx-schedule-tim-grid { grid-template-columns: 1fr; } }
 .nx-schedule-list { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
 .nx-schedule-round { }
 .nx-schedule-round-title { font-size: 14px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
